@@ -24,7 +24,7 @@ The same content is available as manpages (`man neru`) after installation.
 - [Sequences](#sequences) — `run` · `macro`
 - [Configuration commands](#configuration-commands) — `config`
 - [Runtime toggles](#runtime-toggles)
-- [Utilities](#utilities) — `roles` · `services` · `docs`
+- [Utilities](#utilities) — `roles` · `elements` · `services` · `docs`
 - [Scripting](#scripting)
 - [IPC protocol](#ipc-protocol)
 
@@ -98,6 +98,7 @@ Accepted by every command.
 | [`toggle-cursor-follow-selection`](#neru-toggle-cursor-follow-selection) | Toggle cursor follow | Yes | All |
 | [`toggle-screen-share`](#neru-toggle-screen-share)           | Hide overlays while sharing     | Yes | macOS |
 | [`roles`](#neru-roles)                                       | List the role vocabulary        | No  | All |
+| [`elements`](#neru-elements)                                 | List on-screen elements as JSON | Yes | All ¹ |
 | [`services`](#neru-services)                                 | Manage the system service       | No  | macOS |
 | [`docs`](#neru-docs)                                         | Open documentation in a browser | No  | macOS |
 
@@ -1471,6 +1472,41 @@ neru roles --explain
 ```
 
 ---
+
+## neru elements
+
+List the on-screen elements hints mode would target, as JSON. Requires a running daemon.
+
+The machine-readable counterpart to `neru hints --debug`, which prints a short human-readable
+sample. Each element carries the hint label that would select it, so what this returns is exactly
+what `neru action select_hint` accepts — reading the screen and acting on it use the same
+vocabulary, with no overlay drawn and no mode entered.
+
+Elements are collected from whatever window is focused when the command runs. Invoked from a
+terminal, it reports that terminal's elements.
+
+| Flag               | Type   | Default | Description                                                |
+| ------------------ | ------ | ------- | ---------------------------------------------------------- |
+| `--json`           | bool   | `false` | Print the full payload. Without it, only a one-line count.  |
+| `--role`           | string | `""`    | Only elements with these roles (comma-separated).           |
+| `--text`           | string | `""`    | Only elements whose text contains this.                     |
+| `--strategy`       | string | `""`    | Element source: `axtree` or `vision`.                       |
+| `--include-values` | bool   | `false` | Include element values — see below.                         |
+
+Each element carries `label`, `role`, `title`, `description`, `bounds`, `center`, `clickable` and
+`vision_only`. Bounds and centre are in global top-left-origin pixels.
+
+**Values are withheld unless asked for.** A value is the *content* of a field rather than its
+identity, so it can hold whatever has been typed into it. Titles and descriptions are enough to
+identify an element, and the typical caller for this command is about to forward the result
+somewhere else — so reading a field's contents is opt-in.
+
+```bash
+neru elements --json
+neru elements --json --role button,link
+neru elements --json --text "search"
+```
+
 
 ## neru services
 

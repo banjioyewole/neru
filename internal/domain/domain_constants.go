@@ -51,6 +51,13 @@ const (
 	// nothing, activates nothing, and answers with a summary. `neru hints
 	// --debug` is its CLI spelling.
 	CommandHintsProbe = "hints-probe"
+
+	// CommandElements reports the same elements as CommandHintsProbe, but as
+	// structured data rather than a prose sample: label, role, text, bounds and
+	// centre for every element, not ten of them. It is the read half of driving
+	// Neru programmatically — the label it returns is what `action select_hint`
+	// accepts, so a caller can see the screen and act on it without pixels.
+	CommandElements = "elements"
 )
 
 // Mode-related constants.

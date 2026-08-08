@@ -41,6 +41,7 @@ func (h *ModesHandler) RegisterHandlers(
 	}
 
 	handlers[domain.CommandHintsProbe] = h.handleHintsProbe
+	handlers[domain.CommandElements] = h.handleElements
 	handlers[domain.CommandToggleCursorFollowSelection] = h.handleToggleCursorFollowSelection
 }
 

@@ -125,6 +125,7 @@ func TestCommandInitialization(t *testing.T) {
 		cliTestStatus:                    false,
 		"doctor":                         false,
 		cliTestRoles:                     false,
+		"elements":                       false,
 		"launch":                         false,
 		"docs":                           false,
 		"config":                         false,
