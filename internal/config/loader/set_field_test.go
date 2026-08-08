@@ -8,20 +8,20 @@ import (
 )
 
 const (
-	testHintChars = "qwerty"
-	testColorHex  = "#FF0000AA"
+	testSetFieldStrategy = "vision"
+	testColorHex         = "#FF0000AA"
 )
 
 func TestSetField_String(t *testing.T) {
 	cfg := config.DefaultConfig()
 
-	err := loader.SetField(cfg, "hints.hint_characters", testHintChars)
+	err := loader.SetField(cfg, "hints.strategy", testSetFieldStrategy)
 	if err != nil {
 		t.Fatalf("SetField() unexpected error: %v", err)
 	}
 
-	if cfg.Hints.HintCharacters != testHintChars {
-		t.Fatalf("Expected hint_characters=%q, got %q", testHintChars, cfg.Hints.HintCharacters)
+	if cfg.Hints.Strategy != testSetFieldStrategy {
+		t.Fatalf("Expected strategy=%q, got %q", testSetFieldStrategy, cfg.Hints.Strategy)
 	}
 }
 
@@ -176,30 +176,30 @@ func TestSetField_InvalidBoolValue(t *testing.T) {
 
 func TestDeepCopyConfig(t *testing.T) {
 	cfg := config.DefaultConfig()
-	cfg.Hints.HintCharacters = testHintChars
+	cfg.Hints.Strategy = testSetFieldStrategy
 
 	deepCopy, err := loader.DeepCopyConfig(cfg)
 	if err != nil {
 		t.Fatalf("DeepCopyConfig() unexpected error: %v", err)
 	}
 
-	if deepCopy.Hints.HintCharacters != testHintChars {
+	if deepCopy.Hints.Strategy != testSetFieldStrategy {
 		t.Fatalf(
-			"Expected copy hint_characters=%q, got %q",
-			testHintChars,
-			deepCopy.Hints.HintCharacters,
+			"Expected copy strategy=%q, got %q",
+			testSetFieldStrategy,
+			deepCopy.Hints.Strategy,
 		)
 	}
 
 	// Ensure it's a deep copy — modifying the copy should not affect the original
-	deepCopy.Hints.HintCharacters = "asdf"
-	if cfg.Hints.HintCharacters != testHintChars {
+	deepCopy.Hints.Strategy = "axtree"
+	if cfg.Hints.Strategy != testSetFieldStrategy {
 		t.Fatal("DeepCopyConfig() did not produce an independent copy")
 	}
 }
 
 func TestValidateConfigSetField_Valid(t *testing.T) {
-	err := loader.ValidateConfigSetField("hints.hint_characters", testHintChars)
+	err := loader.ValidateConfigSetField("hints.strategy", testSetFieldStrategy)
 	if err != nil {
 		t.Fatalf("ValidateConfigSetField() unexpected error: %v", err)
 	}
@@ -213,7 +213,7 @@ func TestValidateConfigSetField_InvalidPath(t *testing.T) {
 }
 
 func TestConfigFieldType_String(t *testing.T) {
-	typeHint := loader.ConfigFieldType("hints.hint_characters")
+	typeHint := loader.ConfigFieldType("hints.strategy")
 	if typeHint != "string" {
 		t.Fatalf("Expected type 'string', got %q", typeHint)
 	}

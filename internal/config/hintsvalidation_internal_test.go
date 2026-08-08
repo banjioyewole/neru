@@ -48,30 +48,6 @@ func hintsCases() []hintsCase {
 			placement: HintPlacementBottom,
 		},
 		{
-			name:      "empty hint chars",
-			breakIt:   func(c *Config) { c.Hints.HintCharacters = "  " },
-			message:   "[INVALID_CONFIG] hint_characters cannot be empty",
-			placement: HintPlacementBottom,
-		},
-		{
-			name:      "one hint char",
-			breakIt:   func(c *Config) { c.Hints.HintCharacters = "a" },
-			message:   "[INVALID_CONFIG] hint_characters must contain at least 2 characters",
-			placement: HintPlacementBottom,
-		},
-		{
-			name:      "non-ascii hint chars",
-			breakIt:   func(c *Config) { c.Hints.HintCharacters = "a\u00e9" },
-			message:   "[INVALID_CONFIG] hint_characters can only contain ASCII characters",
-			placement: HintPlacementBottom,
-		},
-		{
-			name:      "duplicate hint chars",
-			breakIt:   func(c *Config) { c.Hints.HintCharacters = "aA" },
-			message:   "[INVALID_CONFIG] hint_characters contains duplicate character 'A'",
-			placement: HintPlacementBottom,
-		},
-		{
 			name:      "bad ui color",
 			breakIt:   func(c *Config) { c.Hints.UI.BackgroundColor = badColor() },
 			message:   "[INVALID_CONFIG] hints.ui.background_color (light) has invalid color format: nope",
@@ -258,12 +234,6 @@ func hintsCases() []hintsCase {
 			placement: HintPlacementBottom,
 		},
 		{
-			name:      "bad label direction",
-			breakIt:   func(c *Config) { c.Hints.LabelDirection = placementSideways },
-			message:   "[INVALID_CONFIG] hints.label_direction must be \"reverse\" or \"normal\"",
-			placement: HintPlacementBottom,
-		},
-		{
 			name: "vision detects nothing",
 			breakIt: func(c *Config) {
 				c.Hints.Strategy = domain.StrategyVision
@@ -289,24 +259,6 @@ func hintsCases() []hintsCase {
 				c.Hints.BoundaryHighlight.BorderWidth = -1
 			},
 			message:   "[INVALID_CONFIG] hints.search_input_ui.border_width must be non-negative",
-			placement: HintPlacementBottom,
-		},
-		{
-			name: "bad chars AND bad color",
-			breakIt: func(c *Config) {
-				c.Hints.HintCharacters = "a"
-				c.Hints.UI.BackgroundColor = badColor()
-			},
-			message:   "[INVALID_CONFIG] hint_characters must contain at least 2 characters",
-			placement: HintPlacementBottom,
-		},
-		{
-			name: "bad strategy AND bad label direction",
-			breakIt: func(c *Config) {
-				c.Hints.Strategy = "telepathy"
-				c.Hints.LabelDirection = placementSideways
-			},
-			message:   "[INVALID_CONFIG] hints.strategy must be \"axtree\", \"vision\", or \"contour\"",
 			placement: HintPlacementBottom,
 		},
 	}

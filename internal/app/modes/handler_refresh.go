@@ -47,7 +47,6 @@ func (h *handlerState) refreshHintsForScreenChange(ctx context.Context) bool {
 	filterTextContains := h.hints.Context.FilterTextContains()
 	strategyOverride := h.hints.Context.StrategyOverride()
 	captureScopeOverride := h.hints.Context.CaptureScopeOverride()
-	labelDirectionOverride := h.hints.Context.LabelDirectionOverride()
 
 	// Generate hints with filters preserved; SetHints below performs the
 	// single redraw after active-screen filtering.
@@ -74,7 +73,6 @@ func (h *handlerState) refreshHintsForScreenChange(ctx context.Context) bool {
 		"",
 		strategyOverride,
 		captureScopeOverride,
-		labelDirectionOverride,
 		splitWordOverride,
 	)
 	if showHintsErr != nil {

@@ -5,7 +5,6 @@ import (
 	"runtime"
 	"slices"
 	"strings"
-	"unicode"
 
 	"github.com/y3owk1n/neru/internal/derrors"
 	"github.com/y3owk1n/neru/internal/domain"
@@ -121,7 +120,6 @@ func warnUnresolvableRoles(warnings *Warnings, field string, roles []string, goo
 func (c *Config) ValidateHints(warnings *Warnings) error {
 	checks := []func() error{
 		func() error { return c.validateHintClickableRoles(warnings) },
-		c.validateHintCharacters,
 		c.validateHintColors,
 		c.validateHintLabelUI,
 		c.validateHintSearchInputGeometry,
@@ -172,53 +170,6 @@ func (c *Config) validateHintClickableRoles(warnings *Warnings) error {
 	}
 
 	c.warnUnresolvableClickableRoles(warnings, runtime.GOOS)
-
-	return nil
-}
-
-// validateHintCharacters checks the alphabet hint labels are drawn from.
-//
-// Labels are typed, so the alphabet has to be typeable and unambiguous: at least
-// two characters to build labels out of, ASCII so every keyboard can produce
-// them, and no character twice once case is folded, since matching is
-// case-insensitive and a repeat would make two labels indistinguishable.
-func (c *Config) validateHintCharacters() error {
-	if strings.TrimSpace(c.Hints.HintCharacters) == "" {
-		return derrors.New(derrors.CodeInvalidConfig, "hint_characters cannot be empty")
-	}
-
-	if len(c.Hints.HintCharacters) < MinCharactersLength {
-		return derrors.New(
-			derrors.CodeInvalidConfig,
-			"hint_characters must contain at least 2 characters",
-		)
-	}
-
-	for _, char := range c.Hints.HintCharacters {
-		if char > unicode.MaxASCII {
-			return derrors.New(
-				derrors.CodeInvalidConfig,
-				"hint_characters can only contain ASCII characters",
-			)
-		}
-	}
-
-	seen := make(map[rune]struct{}, len(c.Hints.HintCharacters))
-
-	for _, char := range c.Hints.HintCharacters {
-		upper := unicode.ToUpper(char)
-
-		_, duplicate := seen[upper]
-		if duplicate {
-			return derrors.Newf(
-				derrors.CodeInvalidConfig,
-				"hint_characters contains duplicate character %q",
-				char,
-			)
-		}
-
-		seen[upper] = struct{}{}
-	}
 
 	return nil
 }
@@ -465,16 +416,6 @@ func (c *Config) validateHintVocabulary() error {
 			derrors.CodeInvalidConfig,
 			"hints.capture_scope must be %q or %q",
 			domain.CaptureScopeWindow, domain.CaptureScopeScreen,
-		)
-	}
-
-	switch c.Hints.LabelDirection {
-	case domain.LabelDirectionReverse, domain.LabelDirectionNormal, "":
-	default:
-		return derrors.Newf(
-			derrors.CodeInvalidConfig,
-			"hints.label_direction must be %q or %q",
-			domain.LabelDirectionReverse, domain.LabelDirectionNormal,
 		)
 	}
 

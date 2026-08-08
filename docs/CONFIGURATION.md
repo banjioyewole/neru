@@ -202,7 +202,7 @@ See [CLI.md](CLI.md#configuration-commands) for full flag documentation.
 Neru supports changing individual configuration values at runtime without restarting the daemon or re-reading the config file from disk.
 
 ```bash
-neru config set hints.hint_characters "qwerty"
+neru config set hints.max_depth 30
 neru config set scroll.scroll_step 25
 neru config set general.passthrough_unbounded_keys true
 ```
@@ -251,7 +251,7 @@ To revert all overrides at once, delete the override file and run `neru config r
 
 | Type    | Example                                   |
 | ------- | ----------------------------------------- |
-| string  | `neru config set hints.hint_characters qwerty` |
+| string  | `neru config set hints.strategy axtree` |
 | integer | `neru config set hints.ui.font_size 14`        |
 | boolean | `neru config set scroll.invert_scroll true`    |
 | float   | `neru config set hints.vision.minimum_confidence 0.3` |
@@ -863,8 +863,6 @@ Start with search visible: `neru hints --search` (see [CLI.md](CLI.md#neru-hints
 | `enabled`                          | bool         | `true`                  | Enable/disable hints mode                                                                                                                                                                                                                                                                                                            |
 | `strategy`                         | string       | `"axtree"`              | Element detection strategy: `"axtree"` (the platform accessibility tree), `"vision"` (screen recognition — Vision framework on macOS, tesseract OCR on Linux, Windows.Media.Ocr on Windows), or `"contour"` (edge and contour analysis ported from wl-kbptr, every platform). Both capture strategies detect the focused window content from a screen capture; see the section intro for when to pick which. Overridable per-app via `[hints.app_configs]`. |
 | `capture_scope`                    | string       | `"window"`              | Region the `vision` and `contour` strategies scan: `"window"` (the focused window, or the whole screen when nothing is focused) or `"screen"` (the whole active screen, so notifications, panels and adjacent tiled windows get hints too, at the cost of a bigger capture). Ignored by `axtree`. Overridable per-app via `[hints.app_configs]` and per-activation via `neru hints --capture-scope`. |
-| `hint_characters`                  | string       | `"asdfghjkl"`           | Characters used for labels                                                                                                                                                                                                                                                                                                           |
-| `label_direction`                  | string       | `"normal"`              | Hint label algorithm: `"normal"` (default, prefix-avoidance greedy) or `"reverse"` (reverse-order tiers). Empty value defaults to `"normal"`. Overridable per-app via `[hints.app_configs]` and per-activation via the `neru hints --label-direction` CLI flag. See [Choosing a label direction](#choosing-a-label-direction) below. |
 | `max_depth`                        | int          | `50`                    | Max accessibility tree depth (0 = unlimited)                                                                                                                                                                                                                                                                                         |
 | `include_menubar_hints`            | bool         | `false`                 | Show hints on menubar items                                                                                                                                                                                                                                                                                                          |
 | `include_dock_hints`               | bool         | `false`                 | Show hints on Dock items                                                                                                                                                                                                                                                                                                             |
@@ -1129,27 +1127,6 @@ square_icon_size = 40.0
 square_icon_slack = 5.0
 ```
 
-### Choosing a label direction
-
-The `label_direction` setting controls how multi-character hint labels are enumerated once the single-character pool is exhausted. With a 4-character alphabet (`asdf`) and 5 hinted elements, the two algorithms produce visibly different label sequences:
-
-| Direction          | Sequence         | Notes                                                                              |
-| ------------------ | ---------------- | ---------------------------------------------------------------------------------- |
-| `normal` (default) | `A S D FA FS`    | Keeps 3 single-char labels, then expands the 4th alphabet slot into 2-char labels. |
-| `reverse`          | `AA SA DA FA AS` | Fills the 2-char tier uniformly from the first alphabet character.                 |
-
-**When to prefer `normal` (default):**
-
-- Most workflows — fewer keystrokes for the common case where 1- or 2-character labels are enough.
-- Hint characters are scarce (e.g. a 2- or 3-character alphabet), so single-char labels stay usable longer.
-
-**When to prefer `reverse`:**
-
-- Many hints clustered in one region of the screen. `reverse` spreads the _first_ character of each label evenly across the alphabet, so labels rarely share a prefix and the hint key (the visible character) is less likely to be occluded by another element.
-- Workflows that consistently need more than `len(hint_characters)` hints.
-
-You can also mix directions per-app via `[hints.app_configs]` or per-activation via `neru hints --label-direction`. See the [per-app config table](#per-app-config) and [CLI reference](CLI.md#neru-hints).
-
 ### Default Hotkeys
 
 ```toml
@@ -1177,7 +1154,6 @@ You can also mix directions per-app via `[hints.app_configs]` or per-activation 
 | `bundle_id`                  | string | App bundle ID                                                                                                                                                                             |
 | `strategy`                   | string | Override element detection strategy for this app (`"axtree"`, `"vision"`, or `"contour"`). Empty string = use global `hints.strategy`.                                                                  |
 | `capture_scope`              | string | Override the region the `vision` and `contour` strategies scan for this app (`"window"` or `"screen"`). Empty string = use global `hints.capture_scope`. |
-| `label_direction`            | string | Override hint label algorithm for this app (`"normal"` or `"reverse"`). Empty string = use global `hints.label_direction`. See [Choosing a label direction](#choosing-a-label-direction). |
 | `additional_clickable_roles` | array  | Extra roles to treat as clickable, same vocabulary as [`clickable_roles`](#clickable-roles)                                                                                              |
 | `ignore_clickable_check`     | bool   | Skip clickability heuristic for this app                                                                                                                                                  |
 | `visible_check_enabled`      | bool   | Enable visibility hit-test for this app                                                                                                                                                   |
@@ -1187,7 +1163,6 @@ You can also mix directions per-app via `[hints.app_configs]` or per-activation 
 [[hints.app_configs]]
 bundle_id = "com.apple.Safari"
 strategy = "vision"
-label_direction = "reverse"
 additional_clickable_roles = ["link"]
 ignore_clickable_check = true
 visible_check_enabled = true

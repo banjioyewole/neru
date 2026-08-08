@@ -1,7 +1,6 @@
 package config
 
 import (
-	"github.com/y3owk1n/neru/internal/domain"
 	"github.com/y3owk1n/neru/internal/domain/element"
 	"github.com/y3owk1n/neru/internal/domain/keyvocab"
 	"github.com/y3owk1n/neru/internal/domain/modecmd"
@@ -239,7 +238,6 @@ type AppConfig struct {
 	BundleID             string                         `json:"bundleId"             toml:"bundle_id"`
 	Strategy             string                         `json:"strategy"             toml:"strategy"`
 	CaptureScope         string                         `json:"captureScope"         toml:"capture_scope"`
-	LabelDirection       string                         `json:"labelDirection"       toml:"label_direction"`
 	AdditionalClickable  []string                       `json:"additionalClickable"  toml:"additional_clickable_roles"`
 	IgnoreClickableCheck *bool                          `json:"ignoreClickableCheck" toml:"ignore_clickable_check,omitempty"`
 	VisibleCheckEnabled  *bool                          `json:"visibleCheckEnabled"  toml:"visible_check_enabled,omitempty"`
@@ -444,8 +442,6 @@ type HintsConfig struct {
 	Enabled           bool                `json:"enabled"           toml:"enabled"`
 	Strategy          string              `json:"strategy"          toml:"strategy"`
 	CaptureScope      string              `json:"captureScope"      toml:"capture_scope"`
-	HintCharacters    string              `json:"hintCharacters"    toml:"hint_characters"`
-	LabelDirection    string              `json:"labelDirection"    toml:"label_direction"`
 	MaxDepth          int                 `json:"maxDepth"          toml:"max_depth"`
 	UI                HintsUI             `json:"ui"                toml:"ui"`
 	SearchInputUI     SearchInputUI       `json:"searchInputUi"     toml:"search_input_ui"`
@@ -747,18 +743,6 @@ func (c *Config) baseHotkeysForMode(modeName string) map[string]StringOrStringAr
 		// an undeclared name reads the zero value, whose table is nil.
 		return c.Modes[modeName].Hotkeys
 	}
-}
-
-// LabelDirectionForApp returns the label direction for the given bundle ID.
-// Delegates to MergedForApp to handle the root→app-config override chain.
-// An empty result is normalized to the default "normal".
-func (c *HintsConfig) LabelDirectionForApp(bundleID string) string {
-	dir := c.MergedForApp(bundleID).LabelDirection
-	if dir == "" {
-		return domain.LabelDirectionNormal
-	}
-
-	return dir
 }
 
 // IsAllLetters checks if a string contains only letters (a-z, A-Z).

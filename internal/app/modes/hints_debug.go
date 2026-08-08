@@ -48,7 +48,6 @@ func (h *Handler) DebugProbeHints(
 		bundleID,
 		strategy,
 		captureScope,
-		"", // labelDirectionOverride: probe uses the configured default
 		splitWord,
 	)
 	if genErr != nil {

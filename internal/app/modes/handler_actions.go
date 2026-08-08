@@ -8,6 +8,7 @@ import (
 	"github.com/y3owk1n/neru/internal/derrors"
 	"github.com/y3owk1n/neru/internal/domain"
 	"github.com/y3owk1n/neru/internal/domain/bisect"
+	"github.com/y3owk1n/neru/internal/domain/hint/vocab"
 	"github.com/y3owk1n/neru/internal/domain/modecmd"
 	"github.com/y3owk1n/neru/internal/ports"
 )
@@ -162,7 +163,6 @@ func (h *Handler) CycleHint(ctx context.Context, backward bool, executeAction bo
 		exitOnUnmatched := h.hints.Context.ExitOnUnmatched()
 		strategyOverride := h.hints.Context.StrategyOverride()
 		captureScopeOverride := h.hints.Context.CaptureScopeOverride()
-		labelDirectionOverride := h.hints.Context.LabelDirectionOverride()
 		splitWord := h.hints.Context.SplitWord()
 
 		h.executeActionAtPoint(pendingAction, pendingModifier, center, repeat, func() {
@@ -174,7 +174,6 @@ func (h *Handler) CycleHint(ctx context.Context, backward bool, executeAction bo
 				ExitOnUnmatched:    &exitOnUnmatched,
 				Strategy:           &strategyOverride,
 				CaptureScope:       &captureScopeOverride,
-				LabelDirection:     &labelDirectionOverride,
 				SplitWord:          &splitWord,
 				// OnExit is left nil to preserve the stored steps across
 				// re-activation.
@@ -194,11 +193,42 @@ func (h *Handler) CycleHint(ctx context.Context, backward bool, executeAction bo
 				h.hints.Context.SetExitOnUnmatched(exitOnUnmatched)
 				h.hints.Context.SetStrategyOverride(strategyOverride)
 				h.hints.Context.SetCaptureScopeOverride(captureScopeOverride)
-				h.hints.Context.SetLabelDirectionOverride(labelDirectionOverride)
 				h.hints.Context.SetSplitWord(splitWord)
 			}
 		})
 	}
+
+	return nil
+}
+
+// SelectHintByLabel resolves transcript to a hint label via the vocab
+// package and selects it exactly as if the user had typed a unique prefix.
+// Unlike typed input, this looks up the full hint collection rather than
+// the currently filtered set: a spoken word selects regardless of any
+// half-typed prefix left over from earlier keystrokes.
+func (h *Handler) SelectHintByLabel(ctx context.Context, transcript string) error {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+
+	if h.appState.CurrentMode() != domain.ModeHints {
+		return derrors.New(derrors.CodeInvalidInput, "select_hint requires hints mode")
+	}
+
+	if h.hints == nil || h.hints.Context == nil || h.hints.Context.Hints() == nil {
+		return derrors.New(derrors.CodeActionFailed, "hints component not available")
+	}
+
+	label, err := vocab.ResolveTranscript(transcript)
+	if err != nil {
+		return derrors.Wrap(err, derrors.CodeInvalidInput, "could not resolve transcript to a hint label")
+	}
+
+	target := h.hints.Context.Hints().FindByLabel(label)
+	if target == nil {
+		return derrors.New(derrors.CodeInvalidInput, "no visible hint matches the resolved label")
+	}
+
+	h.selectHint(target)
 
 	return nil
 }

@@ -208,7 +208,6 @@ func (h *handlerState) activateHintModeInternal(activation modecmd.Activation) {
 		bundleID,
 		overrides.strategy,
 		overrides.captureScope,
-		overrides.labelDirection,
 		overrides.splitWord,
 	)
 	if domainHintsErr != nil {

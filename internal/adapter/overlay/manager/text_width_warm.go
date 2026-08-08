@@ -44,7 +44,7 @@ func WarmBadgeTextWidths(cfg *config.Config) {
 		bold   bool
 		extra  string
 	}{
-		{cfg.Hints.UI.FontFamily, bold, cfg.Hints.HintCharacters},
+		{cfg.Hints.UI.FontFamily, bold, ""},
 		{cfg.Hints.SearchInputUI.FontFamily, regular, ""},
 		{cfg.RecursiveGrid.UI.FontFamily, regular, cfg.RecursiveGrid.UI.LabelChar},
 		{cfg.Bisect.UI.FontFamily, regular, cfg.Bisect.UI.LabelChar},

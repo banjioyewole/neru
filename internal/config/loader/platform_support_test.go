@@ -150,11 +150,11 @@ func TestLoadWithValidation_DropsInertFindingsWithARefusedFile(t *testing.T) {
 enabled = true
 
 [hints]
-hint_characters = ""
+strategy = "telepathy"
 `, "")
 
 	if result.ValidationError == nil {
-		t.Fatal("an empty hints.hint_characters was accepted; this test needs a refused file")
+		t.Fatal("an unknown hints.strategy was accepted; this test needs a refused file")
 	}
 
 	if len(result.Inert) > 0 {

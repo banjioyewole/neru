@@ -25,7 +25,7 @@ func TestService_Reload(t *testing.T) {
 	configContent := `
 [hints]
 enabled = true
-hint_characters = "asdf"
+strategy = "vision"
 clickable_roles = ["button"]
 `
 
@@ -45,8 +45,8 @@ clickable_roles = ["button"]
 	}
 
 	cfg := service.Get()
-	if cfg.Hints.HintCharacters != "asdf" {
-		t.Errorf("Reload() did not load correct HintCharacters, got %v", cfg.Hints.HintCharacters)
+	if cfg.Hints.Strategy != "vision" {
+		t.Errorf("Reload() did not load correct Strategy, got %v", cfg.Hints.Strategy)
 	}
 
 	if len(cfg.Hints.ClickableRoles) != 1 || cfg.Hints.ClickableRoles[0] != testRoleButton {

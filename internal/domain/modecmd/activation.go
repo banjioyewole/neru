@@ -85,7 +85,4 @@ type Activation struct {
 
 	// CaptureScopeCycle is the same list for --capture-scope.
 	CaptureScopeCycle []string
-
-	// LabelDirection chooses how hint labels are enumerated.
-	LabelDirection *string
 }

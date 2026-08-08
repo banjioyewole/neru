@@ -69,8 +69,9 @@ func TestActionFlagSupport_NamesAreKnownActions(t *testing.T) {
 // (unknown names are left to the dispatcher), so it would accept every flag —
 // this test is what forces a new action to declare its flags.
 //
-// feed and sleep are intentionally absent: both consume their raw arguments
-// before flag parsing runs.
+// feed, sleep, and select_hint are intentionally absent: all three consume
+// their raw arguments (a transcript, in select_hint's case) before flag
+// parsing runs.
 func TestActionFlagSupport_CoversEveryDispatchableAction(t *testing.T) {
 	dispatchable := []action.Name{
 		action.NameLeftClick, action.NameRightClick, action.NameMiddleClick,

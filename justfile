@@ -284,7 +284,7 @@ test-foundation:
         ./internal/architecture ./internal/cli/cliutil \
         ./internal/domain ./internal/domain/action \
         ./internal/domain/element ./internal/domain/grid \
-        ./internal/domain/hint ./internal/domain/keyvocab \
+        ./internal/domain/hint ./internal/domain/hint/vocab ./internal/domain/keyvocab \
         ./internal/domain/modecmd ./internal/domain/motion \
         ./internal/domain/parity \
         ./internal/domain/recursivegrid \

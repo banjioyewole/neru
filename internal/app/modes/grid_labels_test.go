@@ -16,12 +16,12 @@ import (
 	portmocks "github.com/y3owk1n/neru/internal/ports/mocks"
 )
 
-// gridLabelHintChars is the hint alphabet these fixtures fall back to,
+// gridLabelHintChars is the default alphabet these fixtures fall back to,
 // gridLabelHintLabels the labels a grid built from it carries, and
 // gridLabelGridChars the characters a grid is built from when it has its own.
 const (
-	gridLabelHintChars  = "qwerty"
-	gridLabelHintLabels = "QWERTY"
+	gridLabelHintChars  = domain.DefaultHintCharacters
+	gridLabelHintLabels = "ASDFGHJKL"
 	gridLabelGridChars  = "asdfghjkl"
 )
 
@@ -34,7 +34,6 @@ func TestCreateGridInstance_UsesTheResolvedLabels(t *testing.T) {
 	testCases := []struct {
 		name           string
 		gridCharacters string
-		hintCharacters string
 		rowLabels      string
 		colLabels      string
 		wantCharacters string
@@ -42,13 +41,11 @@ func TestCreateGridInstance_UsesTheResolvedLabels(t *testing.T) {
 		{
 			name:           "labels inferred from the grid characters",
 			gridCharacters: "asdf",
-			hintCharacters: gridLabelHintChars,
 			wantCharacters: "ASDF",
 		},
 		{
 			name:           "labels the user configured",
 			gridCharacters: "asdf",
-			hintCharacters: gridLabelHintChars,
 			rowLabels:      "xy",
 			colLabels:      "zw",
 			wantCharacters: "ASDF",
@@ -56,13 +53,11 @@ func TestCreateGridInstance_UsesTheResolvedLabels(t *testing.T) {
 		{
 			name:           "labels inferred through the hint-characters fallback",
 			gridCharacters: "",
-			hintCharacters: gridLabelHintChars,
 			wantCharacters: gridLabelHintLabels,
 		},
 		{
 			name:           "labels inferred from a character set too short to label with",
 			gridCharacters: "a",
-			hintCharacters: gridLabelHintChars,
 			wantCharacters: strings.ToUpper(domainGrid.DefaultCharacters),
 		},
 	}
@@ -72,7 +67,6 @@ func TestCreateGridInstance_UsesTheResolvedLabels(t *testing.T) {
 			cfg := config.DefaultConfig()
 			cfg.Grid.Enabled = true
 			cfg.Grid.Characters = testCase.gridCharacters
-			cfg.Hints.HintCharacters = testCase.hintCharacters
 			cfg.Grid.RowLabels = testCase.rowLabels
 			cfg.Grid.ColLabels = testCase.colLabels
 			cfg.ResolveGridLabels()
@@ -127,7 +121,6 @@ func TestInitializeGridManager_FallbackGridUsesTheResolvedLabels(t *testing.T) {
 	cfg := config.DefaultConfig()
 	cfg.Grid.Enabled = true
 	cfg.Grid.Characters = ""
-	cfg.Hints.HintCharacters = gridLabelHintChars
 	cfg.Grid.RowLabels = ""
 	cfg.Grid.ColLabels = ""
 	cfg.ResolveGridLabels()

@@ -3,6 +3,7 @@ package config
 import (
 	"strings"
 
+	"github.com/y3owk1n/neru/internal/domain"
 	domainGrid "github.com/y3owk1n/neru/internal/domain/grid"
 )
 
@@ -15,7 +16,7 @@ import (
 // call site rather than at most of them.
 func (c *Config) GridCharacters() string {
 	if strings.TrimSpace(c.Grid.Characters) == "" {
-		return c.Hints.HintCharacters
+		return domain.DefaultHintCharacters
 	}
 
 	return c.Grid.Characters

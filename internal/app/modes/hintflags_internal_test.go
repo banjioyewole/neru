@@ -10,7 +10,6 @@ import (
 // The flag values these cases repeat.
 const (
 	stepScroll      = "scroll"
-	dirReverse      = "reverse"
 	strategyVision  = "vision"
 	strategyAXTree  = "axtree"
 	actionLeftClick = "left_click"
@@ -33,7 +32,6 @@ func populatedContext() *hints.Context {
 	ctx.SetHideOnEmptySearch(true)
 	ctx.SetExitOnUnmatched(true)
 	ctx.SetStrategyOverride(strategyVision)
-	ctx.SetLabelDirectionOverride(dirReverse)
 	ctx.SetSplitWord(true)
 
 	return ctx
@@ -67,10 +65,6 @@ func TestApplyHintFlags_RefreshKeepsUnsetFlags(t *testing.T) {
 
 	if ctx.StrategyOverride() != strategyVision {
 		t.Errorf("StrategyOverride = %q, want it kept", ctx.StrategyOverride())
-	}
-
-	if ctx.LabelDirectionOverride() != dirReverse {
-		t.Errorf("LabelDirectionOverride = %q, want it kept", ctx.LabelDirectionOverride())
 	}
 
 	if !ctx.SplitWord() {
@@ -126,11 +120,6 @@ func TestApplyHintFlags_RefreshWritesTheFlagsItWasGiven(t *testing.T) {
 	if ctx.StrategyOverride() != strategyAXTree {
 		t.Errorf("StrategyOverride = %q, want the flag that was given", ctx.StrategyOverride())
 	}
-
-	// Everything else stays as it was.
-	if ctx.LabelDirectionOverride() != dirReverse {
-		t.Errorf("LabelDirectionOverride = %q, want it kept", ctx.LabelDirectionOverride())
-	}
 }
 
 // TestApplyHintFlags_RefreshTellsAbsentOnExitFromEmptyOne pins the one place
@@ -180,10 +169,6 @@ func TestApplyHintFlags_FreshResetsUnsetFlags(t *testing.T) {
 		t.Errorf("StrategyOverride = %q, want it cleared", ctx.StrategyOverride())
 	}
 
-	if ctx.LabelDirectionOverride() != "" {
-		t.Errorf("LabelDirectionOverride = %q, want it cleared", ctx.LabelDirectionOverride())
-	}
-
 	if ctx.SplitWord() {
 		t.Error("SplitWord = true, want it cleared")
 	}
@@ -223,13 +208,11 @@ func TestApplyHintFlags_FreshWritesTheFlagsItWasGiven(t *testing.T) {
 	action := "double_click"
 	search := true
 	exitOnUnmatched := true
-	labelDirection := dirReverse
 
 	applyHintFlags(ctx, modecmd.Activation{
 		Action:          &action,
 		Search:          &search,
 		ExitOnUnmatched: &exitOnUnmatched,
-		LabelDirection:  &labelDirection,
 		FilterRoles:     []string{"AXLink"},
 	}, false)
 
@@ -243,13 +226,6 @@ func TestApplyHintFlags_FreshWritesTheFlagsItWasGiven(t *testing.T) {
 
 	if !ctx.ExitOnUnmatched() {
 		t.Error("ExitOnUnmatched = false, want the flag that was given")
-	}
-
-	if ctx.LabelDirectionOverride() != dirReverse {
-		t.Errorf(
-			"LabelDirectionOverride = %q, want the flag that was given",
-			ctx.LabelDirectionOverride(),
-		)
 	}
 
 	if len(ctx.FilterRoles()) != 1 || ctx.FilterRoles()[0] != "AXLink" {

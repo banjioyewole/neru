@@ -252,12 +252,13 @@ func TestManager_HandleInput_UpdateDispatchFollowsHintCount(t *testing.T) {
 	}
 }
 
-// TestManager_HandleInput_ExactMatchRequiresUniqueAndEqualLabel pins both
-// halves of the exact-match condition. A hint is selected only when the input
-// has narrowed to exactly one hint *and* that hint's label equals the input in
-// full. Relaxing either half would fire a click on the wrong element, or on a
-// still-ambiguous one.
-func TestManager_HandleInput_ExactMatchRequiresUniqueAndEqualLabel(t *testing.T) {
+// TestManager_HandleInput_UniquePrefixSelects pins the current match rule: a
+// hint is selected as soon as the input narrows the filtered set to exactly
+// one hint, regardless of whether the full label has been typed. This is
+// safe only because the vocabulary is prefix-free (see vocab.IsPrefixFree) —
+// a unique filtered result can never later be extended into a different
+// label, so waiting for the rest of the word would just cost a keystroke.
+func TestManager_HandleInput_UniquePrefixSelects(t *testing.T) {
 	t.Run("unique hint whose label equals the input matches", func(t *testing.T) {
 		manager, recorder, mut := newDispatchManager(t, "AA", "BB")
 		defer mut.Unlock()
@@ -274,45 +275,32 @@ func TestManager_HandleInput_ExactMatchRequiresUniqueAndEqualLabel(t *testing.T)
 		}
 	})
 
-	t.Run("input equal to a label but still ambiguous does not match", func(t *testing.T) {
-		// "AA" is a prefix of "AAB", so after typing "AA" two hints remain.
-		// The first of them has the label "AA", which is exactly the input —
-		// but the set has not been narrowed to one, so this must not select.
+	t.Run("input narrows to exactly one hint still ambiguous does not match", func(t *testing.T) {
+		// "A" still matches both "AA" and "AAB" — two hints remain, so this
+		// must not select even though nothing else has been typed.
 		manager, recorder, mut := newDispatchManager(t, "AA", "AAB")
 		defer mut.Unlock()
-
-		recorder.handleInput(t, manager, "A")
 
 		match, found := recorder.handleInput(t, manager, "A")
 		if found {
 			t.Errorf(
 				"input %q selected %v while another hint still shares that prefix; selection must be unambiguous",
-				"AA",
+				"A",
 				match,
 			)
 		}
 	})
 
-	t.Run("unique hint whose label is longer than the input does not match", func(t *testing.T) {
-		// After "AA" only "AAB" remains — a unique hint, but the user has not
-		// finished typing its label, so nothing may be selected yet.
+	t.Run("unique prefix selects a longer label without typing the rest", func(t *testing.T) {
+		// After "A" only "AAB" remains among ["AAB", "BBB"] — a unique
+		// prefix match selects it in one keystroke, the whole point of a
+		// prefix-free vocabulary.
 		manager, recorder, mut := newDispatchManager(t, "AAB", "BBB")
 		defer mut.Unlock()
 
-		recorder.handleInput(t, manager, "A")
-
 		match, found := recorder.handleInput(t, manager, "A")
-		if found {
-			t.Errorf(
-				"input %q selected %v before its full label was typed",
-				"AA", match,
-			)
-		}
-
-		// Completing the label does select it.
-		match, found = recorder.handleInput(t, manager, "B")
 		if !found {
-			t.Fatal("completing the label of the only remaining hint did not match")
+			t.Fatal("unique prefix match did not select before the full label was typed")
 		}
 
 		if match == nil || match.Label() != "AAB" {

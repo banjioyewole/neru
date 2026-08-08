@@ -5,15 +5,16 @@ import (
 	"testing"
 
 	"github.com/y3owk1n/neru/internal/config"
+	"github.com/y3owk1n/neru/internal/domain"
 	domainGrid "github.com/y3owk1n/neru/internal/domain/grid"
 )
 
-// What a grid is built from: gridLabelHintChars is the hint alphabet it falls
-// back to when grid.characters is blank, gridLabelGridChars the characters it
+// What a grid is built from: gridLabelHintChars is the default alphabet it
+// falls back to when grid.characters is blank, gridLabelGridChars the characters it
 // is built from when it is not, and gridLabelBlank a value that was written and
 // says nothing.
 const (
-	gridLabelHintChars = "qwerty"
+	gridLabelHintChars = domain.DefaultHintCharacters
 	gridLabelGridChars = "asdfghjkl"
 	gridLabelBlank     = "   "
 )
@@ -23,7 +24,7 @@ const (
 // than spelled out so a copy here cannot pass while the two disagree.
 const (
 	gridLabelsFromGridChars = "ASDFGHJKL"
-	gridLabelsFromHintChars = "QWERTY"
+	gridLabelsFromHintChars = "ASDFGHJKL"
 )
 
 var gridLabelsFloor = strings.ToUpper(domainGrid.DefaultCharacters)
@@ -35,7 +36,6 @@ func TestResolveGridLabels(t *testing.T) {
 	testCases := []struct {
 		name           string
 		gridCharacters string
-		hintCharacters string
 		rowLabels      string
 		colLabels      string
 		wantRowLabels  string
@@ -44,14 +44,12 @@ func TestResolveGridLabels(t *testing.T) {
 		{
 			name:           "unset labels are inferred from the grid characters",
 			gridCharacters: gridLabelGridChars,
-			hintCharacters: gridLabelHintChars,
 			wantRowLabels:  gridLabelsFromGridChars,
 			wantColLabels:  gridLabelsFromGridChars,
 		},
 		{
 			name:           "configured labels are kept, uppercased",
 			gridCharacters: gridLabelGridChars,
-			hintCharacters: gridLabelHintChars,
 			rowLabels:      "abc",
 			colLabels:      "def",
 			wantRowLabels:  "ABC",
@@ -60,7 +58,6 @@ func TestResolveGridLabels(t *testing.T) {
 		{
 			name:           "one configured label leaves the other inferred",
 			gridCharacters: "asdf",
-			hintCharacters: gridLabelHintChars,
 			rowLabels:      "xy",
 			wantRowLabels:  "XY",
 			wantColLabels:  "ASDF",
@@ -68,14 +65,12 @@ func TestResolveGridLabels(t *testing.T) {
 		{
 			name:           "blank grid characters infer from the hint characters",
 			gridCharacters: gridLabelBlank,
-			hintCharacters: gridLabelHintChars,
 			wantRowLabels:  gridLabelsFromHintChars,
 			wantColLabels:  gridLabelsFromHintChars,
 		},
 		{
 			name:           "a character set too short to label anything infers the default alphabet",
 			gridCharacters: "a",
-			hintCharacters: gridLabelHintChars,
 			wantRowLabels:  gridLabelsFloor,
 			wantColLabels:  gridLabelsFloor,
 		},
@@ -85,7 +80,6 @@ func TestResolveGridLabels(t *testing.T) {
 		t.Run(testCase.name, func(t *testing.T) {
 			cfg := config.DefaultConfig()
 			cfg.Grid.Characters = testCase.gridCharacters
-			cfg.Hints.HintCharacters = testCase.hintCharacters
 			cfg.Grid.RowLabels = testCase.rowLabels
 			cfg.Grid.ColLabels = testCase.colLabels
 

@@ -24,28 +24,23 @@ func TestInitializeGridManager_AcceptsTheKeysTheOverlayDraws(t *testing.T) {
 		name           string
 		sublayerKeys   string
 		gridCharacters string
-		hintCharacters string
 	}{
 		{
 			name:           "keys the user configured",
 			sublayerKeys:   "uiop",
 			gridCharacters: gridLabelGridChars,
-			hintCharacters: gridLabelHintChars,
 		},
 		{
 			name:           "no keys configured, so the grid characters",
 			gridCharacters: gridLabelGridChars,
-			hintCharacters: gridLabelHintChars,
 		},
 		{
-			name:           "no keys and no grid characters, so the hint characters",
-			hintCharacters: gridLabelHintChars,
+			name: "no keys and no grid characters, so the hint characters",
 		},
 		{
 			name:           "more keys than the subgrid has cells",
 			sublayerKeys:   "abcdefghijklmnop",
 			gridCharacters: gridLabelGridChars,
-			hintCharacters: gridLabelHintChars,
 		},
 		{
 			// The floor. Nothing is configured anywhere, so the grid labels
@@ -62,7 +57,6 @@ func TestInitializeGridManager_AcceptsTheKeysTheOverlayDraws(t *testing.T) {
 			cfg.Grid.Enabled = true
 			cfg.Grid.SublayerKeys = testCase.sublayerKeys
 			cfg.Grid.Characters = testCase.gridCharacters
-			cfg.Hints.HintCharacters = testCase.hintCharacters
 			cfg.ResolveDerived()
 
 			// What the overlay is handed, read the way an overlay reads it.

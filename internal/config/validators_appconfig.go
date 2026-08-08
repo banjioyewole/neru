@@ -221,16 +221,6 @@ func (c *Config) ValidateAppConfigs() error {
 				)
 			}
 
-			switch appConfig.LabelDirection {
-			case domain.LabelDirectionReverse, domain.LabelDirectionNormal, "":
-			default:
-				return derrors.Newf(
-					derrors.CodeInvalidConfig,
-					"hints.app_configs[%d].label_direction must be %q or %q",
-					idx, domain.LabelDirectionReverse, domain.LabelDirectionNormal,
-				)
-			}
-
 			return nil
 		},
 	)

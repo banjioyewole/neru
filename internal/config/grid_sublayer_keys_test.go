@@ -20,44 +20,29 @@ func TestResolveSublayerKeys(t *testing.T) {
 		name           string
 		sublayerKeys   string
 		gridCharacters string
-		hintCharacters string
 		want           string
 	}{
 		{
 			name:           "configured keys are kept",
 			sublayerKeys:   "uiop",
 			gridCharacters: gridLabelGridChars,
-			hintCharacters: gridLabelHintChars,
 			want:           "uiop",
 		},
 		{
 			name:           "unset keys are the characters the grid is labeled with",
 			gridCharacters: gridLabelGridChars,
-			hintCharacters: gridLabelHintChars,
 			want:           gridLabelsFromGridChars,
 		},
 		{
 			name:           "blank keys are not a key set",
 			sublayerKeys:   gridLabelBlank,
 			gridCharacters: gridLabelGridChars,
-			hintCharacters: gridLabelHintChars,
 			want:           gridLabelsFromGridChars,
 		},
 		{
 			name:           "unset keys follow the grid through the hint-characters fallback",
 			gridCharacters: "",
-			hintCharacters: gridLabelHintChars,
 			want:           gridLabelsFromHintChars,
-		},
-		{
-			// Nothing left to infer from. The grid still labels itself from
-			// the default alphabet, so
-			// resolving to the blank set here would draw a subgrid with no keys
-			// on it under a grid that has them.
-			name:           "no characters anywhere still leaves a subgrid to navigate",
-			gridCharacters: "",
-			hintCharacters: "",
-			want:           gridLabelsFloor,
 		},
 	}
 
@@ -66,7 +51,6 @@ func TestResolveSublayerKeys(t *testing.T) {
 			cfg := config.DefaultConfig()
 			cfg.Grid.SublayerKeys = testCase.sublayerKeys
 			cfg.Grid.Characters = testCase.gridCharacters
-			cfg.Hints.HintCharacters = testCase.hintCharacters
 
 			cfg.ResolveSublayerKeys()
 

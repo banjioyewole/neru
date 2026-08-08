@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	testHintChar     = "qwerty"
+	testHintStrategy = "vision"
 	testHintsSection = "hints"
 )
 
@@ -61,7 +61,7 @@ func TestSaveOverride(t *testing.T) {
 
 	overrides := map[string]any{
 		testHintsSection: map[string]any{
-			"hint_characters": testHintChar,
+			"strategy": testHintStrategy,
 		},
 		"general": map[string]any{
 			"passthrough_unbounded_keys": true,
@@ -79,8 +79,8 @@ func TestSaveOverride(t *testing.T) {
 	}
 
 	content := string(data)
-	if !strings.Contains(content, `hint_characters = "`+testHintChar+`"`) {
-		t.Errorf("Override file missing hint_characters, content:\n%s", content)
+	if !strings.Contains(content, `strategy = "`+testHintStrategy+`"`) {
+		t.Errorf("Override file missing strategy, content:\n%s", content)
 	}
 
 	if !strings.Contains(content, "passthrough_unbounded_keys = true") {
@@ -135,7 +135,7 @@ func TestService_SaveOverrideFieldAndLoad(t *testing.T) {
 	configContent := `
 [hints]
 enabled = true
-hint_characters = "asdfghjkl"
+strategy = "axtree"
 clickable_roles = ["button"]
 `
 
@@ -151,11 +151,11 @@ clickable_roles = ["button"]
 		t.Fatalf("LoadWithValidation() failed: %v", result.ValidationError)
 	}
 
-	if result.Config.Hints.HintCharacters != "asdfghjkl" {
-		t.Errorf("Expected hint_characters='asdfghjkl', got %q", result.Config.Hints.HintCharacters)
+	if result.Config.Hints.Strategy != "axtree" {
+		t.Errorf("Expected strategy='axtree', got %q", result.Config.Hints.Strategy)
 	}
 
-	err := service.SaveOverrideField("hints.hint_characters", testHintChar)
+	err := service.SaveOverrideField("hints.strategy", testHintStrategy)
 	if err != nil {
 		t.Fatalf("SaveOverrideField() failed: %v", err)
 	}
@@ -170,10 +170,10 @@ clickable_roles = ["button"]
 		t.Fatalf("Failed to read override file: %v", readErr)
 	}
 
-	if !strings.Contains(string(data), `hint_characters = "`+testHintChar+`"`) {
+	if !strings.Contains(string(data), `strategy = "`+testHintStrategy+`"`) {
 		t.Errorf(
-			"Override file should contain hint_characters = %q, content:\n%s",
-			testHintChar,
+			"Override file should contain strategy = %q, content:\n%s",
+			testHintStrategy,
 			data,
 		)
 	}
@@ -183,11 +183,11 @@ clickable_roles = ["button"]
 		t.Fatalf("Reload with override failed: %v", reloadedResult.ValidationError)
 	}
 
-	if reloadedResult.Config.Hints.HintCharacters != testHintChar {
+	if reloadedResult.Config.Hints.Strategy != testHintStrategy {
 		t.Errorf(
-			"After override, expected hint_characters=%q, got %q",
-			testHintChar,
-			reloadedResult.Config.Hints.HintCharacters,
+			"After override, expected strategy=%q, got %q",
+			testHintStrategy,
+			reloadedResult.Config.Hints.Strategy,
 		)
 	}
 }
@@ -195,7 +195,7 @@ clickable_roles = ["button"]
 func TestService_SaveOverrideFieldNoConfigPath(t *testing.T) {
 	service := loader.NewService(config.DefaultConfig(), "", zap.NewNop(), nil)
 
-	err := service.SaveOverrideField("hints.hint_characters", testHintChar)
+	err := service.SaveOverrideField("hints.strategy", testHintStrategy)
 	if err != nil {
 		t.Errorf("SaveOverrideField() with empty path should return nil, got: %v", err)
 	}
@@ -208,7 +208,7 @@ func TestService_OverridePreservesOtherFields(t *testing.T) {
 	configContent := `
 [hints]
 enabled = true
-hint_characters = "asdfghjkl"
+strategy = "axtree"
 clickable_roles = ["button"]
 
 [general]
@@ -223,18 +223,18 @@ passthrough_unbounded_keys = false
 	service := loader.NewService(config.DefaultConfig(), configPath, zap.NewNop(), nil)
 	_ = service.LoadWithValidation(configPath)
 
-	_ = service.SaveOverrideField("hints.hint_characters", testHintChar)
+	_ = service.SaveOverrideField("hints.strategy", testHintStrategy)
 
 	reloaded := service.LoadWithValidation(configPath)
 	if reloaded.ValidationError != nil {
 		t.Fatalf("Reload failed: %v", reloaded.ValidationError)
 	}
 
-	if reloaded.Config.Hints.HintCharacters != testHintChar {
+	if reloaded.Config.Hints.Strategy != testHintStrategy {
 		t.Errorf(
-			"Expected hint_characters=%q, got %q",
-			testHintChar,
-			reloaded.Config.Hints.HintCharacters,
+			"Expected strategy=%q, got %q",
+			testHintStrategy,
+			reloaded.Config.Hints.Strategy,
 		)
 	}
 
@@ -261,7 +261,7 @@ func TestService_OverrideInvalidatesConfig(t *testing.T) {
 	configContent := `
 [hints]
 enabled = true
-hint_characters = "asdfghjkl"
+strategy = "axtree"
 clickable_roles = ["button"]
 `
 
@@ -273,7 +273,7 @@ clickable_roles = ["button"]
 	service := loader.NewService(config.DefaultConfig(), configPath, zap.NewNop(), nil)
 	_ = service.LoadWithValidation(configPath)
 
-	err := service.SaveOverrideField("hints.hint_characters", testHintChar)
+	err := service.SaveOverrideField("hints.strategy", testHintStrategy)
 	if err != nil {
 		t.Fatalf("SaveOverrideField() failed: %v", err)
 	}
@@ -281,7 +281,7 @@ clickable_roles = ["button"]
 	overridePath := loader.OverridePath(configPath)
 	badOverride := `
 [hints]
-hint_characters = "x"
+strategy = "bogus"
 `
 
 	writeErr := os.WriteFile(overridePath, []byte(badOverride), 0o644)
@@ -291,6 +291,6 @@ hint_characters = "x"
 
 	result := service.LoadWithValidation(configPath)
 	if result.ValidationError == nil {
-		t.Error("Expected validation error with short hint_characters in override, got nil")
+		t.Error("Expected validation error with invalid strategy in override, got nil")
 	}
 }

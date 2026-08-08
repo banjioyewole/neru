@@ -7,20 +7,19 @@ import (
 // baseContext provides common functionality for mode component contexts.
 // It contains shared state fields used across different mode contexts.
 type baseContext struct {
-	pendingAction          *string
-	pendingModifier        *string
-	onExit                 []string
-	repeat                 bool
-	cursorFollowSelection  bool
-	filterRoles            []string
-	filterTextContains     []string
-	startWithSearch        bool
-	strategyOverride       string
-	captureScopeOverride   string
-	activeStrategy         string
-	activeCaptureScope     string
-	labelDirectionOverride string
-	splitWord              bool
+	pendingAction         *string
+	pendingModifier       *string
+	onExit                []string
+	repeat                bool
+	cursorFollowSelection bool
+	filterRoles           []string
+	filterTextContains    []string
+	startWithSearch       bool
+	strategyOverride      string
+	captureScopeOverride  string
+	activeStrategy        string
+	activeCaptureScope    string
+	splitWord             bool
 }
 
 // SetPendingAction sets the action to execute when mode selection is complete.
@@ -95,7 +94,6 @@ func (c *baseContext) Reset() {
 	c.captureScopeOverride = ""
 	c.activeStrategy = ""
 	c.activeCaptureScope = ""
-	c.labelDirectionOverride = ""
 	c.splitWord = false
 }
 
@@ -166,17 +164,6 @@ func (c *baseContext) SetCaptureScopeOverride(scope string) {
 // CaptureScopeOverride returns the session capture scope override.
 func (c *baseContext) CaptureScopeOverride() string {
 	return c.captureScopeOverride
-}
-
-// SetLabelDirectionOverride stores the session hint label direction override.
-// An empty string clears the override so the configured direction is used.
-func (c *baseContext) SetLabelDirectionOverride(direction string) {
-	c.labelDirectionOverride = direction
-}
-
-// LabelDirectionOverride returns the session hint label direction override.
-func (c *baseContext) LabelDirectionOverride() string {
-	return c.labelDirectionOverride
 }
 
 // SetSplitWord stores the session word splitting preference.

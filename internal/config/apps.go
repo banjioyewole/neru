@@ -53,10 +53,6 @@ func (c *HintsConfig) MergedForApp(bundleID string) HintsConfig {
 		merged.CaptureScope = appConfig.CaptureScope
 	}
 
-	if appConfig.LabelDirection != "" {
-		merged.LabelDirection = appConfig.LabelDirection
-	}
-
 	if appConfig.IgnoreClickableCheck != nil {
 		merged.IgnoreClickableCheck = *appConfig.IgnoreClickableCheck
 	}

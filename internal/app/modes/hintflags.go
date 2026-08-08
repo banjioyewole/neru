@@ -67,10 +67,6 @@ func applyHintFlagOverrides(ctx *hints.Context, activation modecmd.Activation) {
 		ctx.SetCaptureScopeOverride(*activation.CaptureScope)
 	}
 
-	if activation.LabelDirection != nil {
-		ctx.SetLabelDirectionOverride(*activation.LabelDirection)
-	}
-
 	if activation.SplitWord != nil {
 		ctx.SetSplitWord(*activation.SplitWord)
 	}
@@ -93,7 +89,6 @@ func applyHintFlagsFresh(ctx *hints.Context, activation modecmd.Activation) {
 	ctx.SetExitOnUnmatched(activation.ExitOnUnmatched != nil && *activation.ExitOnUnmatched)
 	ctx.SetStrategyOverride(derefOr(activation.Strategy, ""))
 	ctx.SetCaptureScopeOverride(derefOr(activation.CaptureScope, ""))
-	ctx.SetLabelDirectionOverride(derefOr(activation.LabelDirection, ""))
 	ctx.SetSplitWord(derefOr(activation.SplitWord, false))
 }
 
@@ -109,10 +104,9 @@ func derefOr[T any](value *T, fallback T) T {
 
 // hintOverrides are the settings that decide how a hint scan runs.
 type hintOverrides struct {
-	strategy       string
-	captureScope   string
-	labelDirection string
-	splitWord      bool
+	strategy     string
+	captureScope string
+	splitWord    bool
 }
 
 // resolveHintOverrides reads the overrides in force. They come from the
@@ -122,18 +116,16 @@ type hintOverrides struct {
 func (h *handlerState) resolveHintOverrides(activation modecmd.Activation) hintOverrides {
 	if h.hints != nil && h.hints.Context != nil {
 		return hintOverrides{
-			strategy:       h.hints.Context.StrategyOverride(),
-			captureScope:   h.hints.Context.CaptureScopeOverride(),
-			labelDirection: h.hints.Context.LabelDirectionOverride(),
-			splitWord:      h.hints.Context.SplitWord(),
+			strategy:     h.hints.Context.StrategyOverride(),
+			captureScope: h.hints.Context.CaptureScopeOverride(),
+			splitWord:    h.hints.Context.SplitWord(),
 		}
 	}
 
 	return hintOverrides{
-		strategy:       derefOr(activation.Strategy, ""),
-		captureScope:   derefOr(activation.CaptureScope, ""),
-		labelDirection: derefOr(activation.LabelDirection, ""),
-		splitWord:      derefOr(activation.SplitWord, false),
+		strategy:     derefOr(activation.Strategy, ""),
+		captureScope: derefOr(activation.CaptureScope, ""),
+		splitWord:    derefOr(activation.SplitWord, false),
 	}
 }
 

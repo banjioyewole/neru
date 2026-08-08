@@ -106,6 +106,11 @@ const (
 	// LabelDirectionNormal uses the original prefix-avoidance algorithm that
 	// prefers shorter labels. This is the default.
 	LabelDirectionNormal = "normal"
+
+	// DefaultHintCharacters is the coordinate alphabet a grid falls back to
+	// when grid.characters is blank. Hint labels are words and have no
+	// alphabet of their own to lend it.
+	DefaultHintCharacters = "asdfghjkl"
 )
 
 // How the real cursor behaves while a selection is being made, the values

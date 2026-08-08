@@ -119,7 +119,6 @@ func TestActivateMode_HandsTheWholeActivationToTheMode(t *testing.T) {
 	act := actionLeftClick
 	modifier := keyPartCmd
 	strategy := strategyVision
-	labelDirection := dirReverse
 	depth := 3
 	given := true
 	holdCursor := false
@@ -145,7 +144,6 @@ func TestActivateMode_HandsTheWholeActivationToTheMode(t *testing.T) {
 				FilterRoles:           []string{"AXButton"},
 				FilterTextContains:    []string{"OK"},
 				Strategy:              &strategy,
-				LabelDirection:        &labelDirection,
 			},
 		},
 		{

@@ -755,9 +755,7 @@ func (o *sharedOverlay) repaintHints(
 		}
 
 		textColor := style.TextColor()
-		if hint.MatchedPrefix() != "" {
-			textColor = style.MatchedTextColor()
-		}
+		matchedColor := style.MatchedTextColor()
 
 		label := hint.Label()
 		// Size the badge from the scaled font so it fits the text drawTextCentered
@@ -795,12 +793,10 @@ func (o *sharedOverlay) repaintHints(
 			badgeRect, float64(radius), hintTailEdge(badgeRect, arrow, hasArrow), arrow,
 			fill, border, borderWidth,
 		)
-		o.drawTextCentered(
-			label, badgeRect,
-			style.FontFamily(),
-			fontSize,
-			badge.ParseHexARGB(textColor),
-			true,
+		o.drawHintLabel(
+			label, hint.MatchedPrefix(), badgeRect,
+			style.FontFamily(), fontSize, sfont,
+			textColor, matchedColor,
 		)
 	}
 
@@ -879,6 +875,38 @@ func (o *sharedOverlay) hideHintSearchInput(painted image.Rectangle) {
 
 	o.clearRect(painted)
 	o.srf.surfaceFlush()
+}
+
+// drawHintLabel draws a hint's label, splitting it into a matched-prefix
+// segment (matchedColor) and an unmatched tail (textColor) when splitHintLabel
+// (manager.go, pure geometry) finds one to draw; otherwise the whole label
+// draws as one run, in matchedColor if it matched in full and textColor
+// otherwise.
+func (o *sharedOverlay) drawHintLabel(
+	label, matchedPrefix string,
+	badgeRect image.Rectangle,
+	fontFamily string,
+	fontSize, sfont float64,
+	textColor, matchedColor string,
+) {
+	headRect, tailRect, tail, ok := splitHintLabel(
+		label, matchedPrefix, badgeRect, fontFamily, sfont,
+	)
+	if !ok {
+		color := textColor
+		if matchedPrefix == label && matchedPrefix != "" {
+			color = matchedColor
+		}
+
+		o.drawTextCentered(label, badgeRect, fontFamily, fontSize, badge.ParseHexARGB(color), true)
+
+		return
+	}
+
+	o.drawTextCentered(
+		matchedPrefix, headRect, fontFamily, fontSize, badge.ParseHexARGB(matchedColor), true,
+	)
+	o.drawTextCentered(tail, tailRect, fontFamily, fontSize, badge.ParseHexARGB(textColor), true)
 }
 
 // drawMouseActionIndicator animates a transient click indicator centered on
