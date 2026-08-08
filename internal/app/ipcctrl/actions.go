@@ -123,6 +123,13 @@ func (h *ActionsHandler) handleAction(ctx context.Context, cmd ipc.Command) ipc.
 		return h.handleSleepAction(ctx, cmd.Args[1:])
 	}
 
+	// select_hint takes its transcript as a raw positional arg, not flags —
+	// the transcript may itself look like a flag ("--uh, sierra") — so it is
+	// dispatched before parseActionArgs, the same as feed and sleep above.
+	if action.IsSelectHintAction(actionName) {
+		return h.handleSelectHintAction(ctx, cmd.Args[1:])
+	}
+
 	parsed, parseFailed := parseActionArgs(cmd.Args[1:])
 	if parseFailed {
 		return refuseAction("invalid or missing flag value")

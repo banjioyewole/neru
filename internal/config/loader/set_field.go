@@ -11,7 +11,7 @@ import (
 	"github.com/y3owk1n/neru/internal/derrors"
 )
 
-// SetField sets a field on a Config by dotted path (e.g. "hints.hint_characters").
+// SetField sets a field on a Config by dotted path (e.g. "hints.max_depth").
 // Path elements use TOML tag names. Returns an error if the path is unknown or
 // the value cannot be converted.
 func SetField(cfg *config.Config, path, value string) error {

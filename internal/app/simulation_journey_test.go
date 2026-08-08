@@ -101,6 +101,73 @@ func TestSimulation_HintsJourney_SelectMovesCursor(t *testing.T) {
 	})
 }
 
+// TestSimulation_HintsDictationJourney covers spoken selection end to end:
+// hints active, a select_hint action carrying a noisy transcript ("uh,
+// bravo.") resolves through the vocab package and lands the cursor on the
+// matching element's center without a single keystroke sent to the hint
+// router. It exercises the real dispatch path a voice bridge would use —
+// "action select_hint <transcript>" through a hotkey binding — rather than
+// calling modes.Handler.SelectHintByLabel directly.
+func TestSimulation_HintsDictationJourney(t *testing.T) {
+	elements := threeButtons(t) // reading order: save=ALPHA, cancel=BRAVO, search=CHARLIE
+	cfg := simConfig()
+	cfg.Hints.Hotkeys = map[string]config.StringOrStringArray{
+		"F1": {"action select_hint uh, bravo."},
+	}
+	sim := newSimHarness(t, cfg, elements)
+
+	sim.pressHotkey(hintsHotkey)
+	sim.waitMode(domain.ModeHints)
+	sim.waitFor("hints drawn", func() bool { return sim.overlay.hintDrawCount() > 0 })
+
+	movesBefore := sim.cursor.moveCount()
+
+	sim.press("F1")
+
+	sim.waitFor("cursor moved to the dictated element", func() bool {
+		return sim.cursor.moveCount() > movesBefore
+	})
+
+	cancelCenter := elements[1].Center()
+	if got := sim.cursor.position(); got != cancelCenter {
+		t.Fatalf("cursor landed at %v, want the dictated element's center %v", got, cancelCenter)
+	}
+
+	if clicks := sim.ax.recordedClicks(); len(clicks) != 0 {
+		t.Fatalf("expected no clicks for actionless dictated selection, got %v", clicks)
+	}
+}
+
+// TestSimulation_HintsDictationJourney_Unresolvable covers the refusal path:
+// a transcript matching no vocabulary word must not move the cursor or drop
+// the daemon out of hints mode.
+func TestSimulation_HintsDictationJourney_Unresolvable(t *testing.T) {
+	elements := threeButtons(t)
+	cfg := simConfig()
+	cfg.Hints.Hotkeys = map[string]config.StringOrStringArray{
+		"F1": {"action select_hint qwqwqwqwq"},
+	}
+	sim := newSimHarness(t, cfg, elements)
+
+	sim.pressHotkey(hintsHotkey)
+	sim.waitMode(domain.ModeHints)
+	sim.waitFor("hints drawn", func() bool { return sim.overlay.hintDrawCount() > 0 })
+
+	movesBefore := sim.cursor.moveCount()
+
+	sim.press("F1")
+
+	sim.neverMode(domain.ModeIdle, 200*time.Millisecond)
+
+	if sim.cursor.moveCount() != movesBefore {
+		t.Fatalf("cursor moved for an unresolvable transcript, moveCount %d -> %d", movesBefore, sim.cursor.moveCount())
+	}
+
+	if sim.app.CurrentMode() != domain.ModeHints {
+		t.Fatalf("mode changed to %v, want hints mode untouched", sim.app.CurrentMode())
+	}
+}
+
 // TestSimulation_HintsJourney_ClickAction covers the canonical "click a
 // button without a mouse" journey: a binding with an explicit action
 // ("hints left_click") makes typing the label move the cursor to the element
@@ -384,12 +451,14 @@ func TestSimulation_HintsSearchJourney(t *testing.T) {
 	})
 }
 
-// TestSimulation_HintsTwoCharLabels covers label generation past the
-// single-character alphabet: 12 elements with 9 hint characters force
-// two-character labels; a first keystroke narrows the drawn set, and the
-// full label still lands the cursor on an element.
+// TestSimulation_HintsTwoCharLabels covers label generation past a single
+// round of the word vocabulary: 30 elements overflow the 26-word first round
+// (one word per starting letter), so the generator must reuse a starting
+// letter for the tail of the set (e.g. round-0 "ALPHA" alongside round-1
+// "AMBER"). Typing the shared prefix narrows the drawn set to the ambiguous
+// pair; finishing one full label still lands the cursor on its element.
 func TestSimulation_HintsTwoCharLabels(t *testing.T) {
-	elements := manyButtons(t, 12)
+	elements := manyButtons(t, 30)
 	sim := newSimHarness(t, simConfig(), elements)
 
 	sim.pressHotkey(hintsHotkey)
@@ -401,55 +470,78 @@ func TestSimulation_HintsTwoCharLabels(t *testing.T) {
 		t.Fatalf("expected %d labels, got %d", len(elements), len(labels))
 	}
 
-	// With 9 hint characters and 12 elements the generator must overflow into
-	// multi-character labels for the tail of the set.
-	label := ""
+	// With 30 elements the vocabulary overflows its first round (26 labels,
+	// one per starting letter), so two labels must share a starting letter.
+	sharedPrefix, ambiguousCount := sharedLabelPrefix(labels)
+	if sharedPrefix == "" {
+		t.Fatalf("expected two labels sharing a starting letter among %v", labels)
+	}
+
+	// The shared prefix narrows the visible hint set, but not to one.
+	sim.press(strings.ToLower(sharedPrefix))
+	sim.waitFor("hints narrowed by prefix", func() bool {
+		remaining := sim.overlay.lastHintLabels()
+
+		return len(remaining) == ambiguousCount && ambiguousCount < len(elements)
+	})
+
+	// Backspace restores the full set.
+	for range sharedPrefix {
+		sim.press("Backspace")
+	}
+
+	sim.waitFor("hints restored after backspace", func() bool {
+		return len(sim.overlay.lastHintLabels()) == len(elements)
+	})
+
+	// Finishing one of the ambiguous labels selects its element.
+	target := ""
 
 	for _, candidate := range labels {
-		if len(candidate) >= 2 {
-			label = strings.ToLower(candidate)
+		if strings.HasPrefix(candidate, sharedPrefix) {
+			target = candidate
 
 			break
 		}
 	}
 
-	if label == "" {
-		t.Fatalf(
-			"expected at least one multi-character label for %d elements, got %v",
-			len(elements),
-			labels,
-		)
-	}
-
-	// First character narrows the visible hint set.
-	sim.press(string(label[0]))
-	sim.waitFor("hints narrowed by prefix", func() bool {
-		remaining := sim.overlay.lastHintLabels()
-
-		return len(remaining) > 0 && len(remaining) < len(elements)
-	})
-
-	// Backspace restores the full set.
-	sim.press("Backspace")
-	sim.waitFor("hints restored after backspace", func() bool {
-		return len(sim.overlay.lastHintLabels()) == len(elements)
-	})
-
-	// The full label selects an element.
 	movesBefore := sim.cursor.moveCount()
-	sim.typeLabel(label)
+	sim.typeLabel(target)
 	sim.waitFor("cursor moved to the selected element", func() bool {
 		return sim.cursor.moveCount() > movesBefore
 	})
 
-	target := sim.cursor.position()
+	landed := sim.cursor.position()
 	for _, elem := range elements {
-		if target == elem.Center() {
+		if landed == elem.Center() {
 			return
 		}
 	}
 
-	t.Fatalf("cursor landed at %v, not on any element center", target)
+	t.Fatalf("cursor landed at %v, not on any element center", landed)
+}
+
+// sharedLabelPrefix finds a first character shared by two or more labels, and
+// how many labels share it. Returns ("", 0) if every label starts with a
+// distinct character.
+func sharedLabelPrefix(labels []string) (string, int) {
+	counts := make(map[string]int, len(labels))
+
+	for _, label := range labels {
+		if label == "" {
+			continue
+		}
+
+		counts[label[:1]]++
+	}
+
+	for prefix, count := range counts {
+		if count > 1 {
+			return prefix, count
+		}
+	}
+
+	return "", 0
 }
 
 // TestSimulation_HintsInModeClick covers the two-step click a user performs
@@ -938,9 +1030,14 @@ func TestSimulation_StickyModifierClick(t *testing.T) {
 		return sim.overlay.stickyIndicatorDrawCount() > 0
 	})
 
-	// With Shift held (sticky posts it physically), the event tap reports the
-	// label keystroke as a Shift chord; Neru strips it for label matching.
-	sim.press("Shift+" + strings.ToUpper(sim.overlay.lastHintLabels()[0]))
+	// With Shift held (sticky posts it physically), the event tap reports each
+	// label keystroke as a Shift chord; Neru strips it for label matching. Only
+	// the label's minimal unique prefix is needed — hint.Manager selects as
+	// soon as the filtered set narrows to one, same as an unmodified keystroke.
+	label := strings.ToUpper(sim.overlay.lastHintLabels()[0])
+	for _, r := range label[:sim.uniqueHintPrefixLen(label)] {
+		sim.press("Shift+" + string(r))
+	}
 
 	sim.waitFor("click recorded", func() bool { return len(sim.ax.recordedClicks()) > 0 })
 

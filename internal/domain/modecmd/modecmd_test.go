@@ -144,11 +144,16 @@ func flagCases() map[modecmd.Flag]flagCase {
 			applied: func(a modecmd.Activation) bool { return a.Strategy != nil },
 			build:   func(a *modecmd.Activation) { a.Strategy = new("vision") },
 		},
+		// FlagLabelDirection is a validated no-op: hint labels no longer have
+		// a direction axis, so the flag is kept only so an existing binding
+		// of `hints --label-direction reverse` keeps parsing instead of
+		// falling back to defaults. There is no activation field left to
+		// check, so "applied" only proves the value validated cleanly.
 		modecmd.FlagLabelDirection: {
 			mode:    domain.ModeHints,
 			args:    []string{"--label-direction=" + directionReverse},
-			applied: func(a modecmd.Activation) bool { return a.LabelDirection != nil },
-			build:   func(a *modecmd.Activation) { a.LabelDirection = new(directionReverse) },
+			applied: func(_ modecmd.Activation) bool { return true },
+			build:   func(_ *modecmd.Activation) {},
 		},
 		modecmd.FlagSplitWord: {
 			mode:    domain.ModeHints,

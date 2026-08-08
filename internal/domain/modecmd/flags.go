@@ -472,18 +472,22 @@ var descriptors = []Descriptor{
 			return renderValue(FlagStrategy, activation.Strategy)
 		},
 	),
+	// FlagLabelDirection is a validated no-op: hint labels are drawn from a
+	// fixed word vocabulary with no direction axis, so the value is checked
+	// for shape and then discarded rather than stored on the activation.
+	// The flag stays registered so an existing binding of
+	// `hints --label-direction reverse` keeps parsing instead of falling
+	// back to config defaults on load (internal/config/AGENTS.md).
 	valueFlag(FlagLabelDirection, "", usageLabelDirection, msgLabelDirectionValue, hintsOnly,
-		func(activation *Activation, value string) error {
+		func(_ *Activation, value string) error {
 			if value != domain.LabelDirectionNormal && value != domain.LabelDirectionReverse {
 				return invalid(msgLabelDirectionValue)
 			}
 
-			activation.LabelDirection = &value
-
 			return nil
 		},
-		func(activation Activation) []string {
-			return renderValue(FlagLabelDirection, activation.LabelDirection)
+		func(_ Activation) []string {
+			return nil
 		},
 	),
 	presenceFlag(FlagSplitWord, "", usageSplitWord, hintsOnly,

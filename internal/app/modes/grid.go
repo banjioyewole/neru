@@ -128,7 +128,7 @@ func (h *handlerState) createGridInstance() *domainGrid.Grid {
 
 	characters := h.config.Grid.Characters
 	if strings.TrimSpace(characters) == "" {
-		characters = h.config.Hints.HintCharacters
+		characters = domain.DefaultHintCharacters
 	}
 
 	gridInstance := domainGrid.NewGridWithLabels(

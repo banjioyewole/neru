@@ -21,7 +21,6 @@ import (
 	"github.com/y3owk1n/neru/internal/config"
 	"github.com/y3owk1n/neru/internal/config/loader"
 	"github.com/y3owk1n/neru/internal/derrors"
-	domainHint "github.com/y3owk1n/neru/internal/domain/hint"
 	"github.com/y3owk1n/neru/internal/domain/state"
 	"github.com/y3owk1n/neru/internal/ports"
 )
@@ -116,11 +115,6 @@ func initializeServicesAndAdapters(app *App) error {
 		return err
 	}
 
-	// Pre-build a generator for the opposite label direction so the
-	// per-activation `hints --label-direction <opposite>` path resolves to
-	// a real generator instead of silently falling back to the default.
-	registerOppositeLabelDirectionGenerator(app, hintService, cfg)
-
 	// Store services on app
 	app.hintService = hintService
 	app.gridService = gridService
@@ -130,52 +124,6 @@ func initializeServicesAndAdapters(app *App) error {
 	app.configService = cfgService
 
 	return nil
-}
-
-// registerOppositeLabelDirectionGenerator builds and registers a generator for
-// the label direction opposite to the configured one, so the per-activation
-// `hints --label-direction <opposite>` override resolves to a real generator
-// instead of silently falling back to the default.
-func registerOppositeLabelDirectionGenerator(
-	app *App,
-	hintService *services.HintService,
-	cfg *config.Config,
-) {
-	if hintService == nil {
-		return
-	}
-
-	primaryDirection := domainHint.LabelDirectionFromString(
-		cfg.Hints.LabelDirectionForApp(""),
-	)
-
-	oppositeDirection := primaryDirection.Opposite()
-
-	if primaryDirection == oppositeDirection {
-		return
-	}
-
-	oppositeGen, oppositeGenErr := domainHint.NewAlphabetGenerator(
-		cfg.Hints.HintCharacters,
-		oppositeDirection,
-	)
-	if oppositeGenErr != nil {
-		app.logger.Error(
-			"Failed to build opposite-direction hint generator",
-			zap.String("direction", oppositeDirection.String()),
-			zap.Error(oppositeGenErr),
-		)
-
-		return
-	}
-
-	hintService.UpdateGenerator(app.ctx, oppositeGen)
-
-	app.logger.Debug(
-		"Registered opposite-direction hint generator",
-		zap.String("primary_direction", primaryDirection.String()),
-		zap.String("opposite_direction", oppositeDirection.String()),
-	)
 }
 
 // initializeApplicationState sets up the core application state objects.

@@ -252,10 +252,12 @@ func (m *Manager) HandleInput(key string) (*Interface, bool, error) {
 		m.cachedFilteredHints[i] = h.WithMatchedPrefix(m.CurrentInput())
 	}
 
-	// Check for exact match
-	if len(m.cachedFilteredHints) == 1 && m.cachedFilteredHints[0].Label() == m.CurrentInput() {
+	// Check for a unique match. With a prefix-free vocabulary a unique
+	// filtered result can never be extended into another label, so a
+	// unique prefix is sufficient — the full label need not be typed.
+	if len(m.cachedFilteredHints) == 1 {
 		if m.Logger != nil {
-			m.Logger.Debug("Hint manager: Exact match found",
+			m.Logger.Debug("Hint manager: Unique match found",
 				zap.String("label", m.cachedFilteredHints[0].Label()))
 		}
 

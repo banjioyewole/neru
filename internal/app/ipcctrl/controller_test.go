@@ -166,7 +166,7 @@ func TestIPCController_HandleConfigSet_String(t *testing.T) {
 	// Set a string config field
 	commandResponse := controller.HandleCommand(ctx, ipc.Command{
 		Action: domain.CommandConfigSet,
-		Args:   []string{"hints.hint_characters", "qwerty"},
+		Args:   []string{"hints.strategy", "vision"},
 	})
 
 	if !commandResponse.Success {
@@ -184,8 +184,8 @@ func TestIPCController_HandleConfigSet_String(t *testing.T) {
 	// Verify the change took effect by dumping the config
 	cfgResp := controller.HandleCommand(ctx, ipc.Command{Action: domain.CommandConfig})
 	if cfg, ok := cfgResp.Data.(*config.Config); ok && cfg != nil {
-		if cfg.Hints.HintCharacters != "qwerty" {
-			t.Errorf("Expected hint_characters='qwerty', got %q", cfg.Hints.HintCharacters)
+		if cfg.Hints.Strategy != "vision" {
+			t.Errorf("Expected strategy='vision', got %q", cfg.Hints.Strategy)
 		}
 	} else {
 		t.Error("Failed to read config after set")

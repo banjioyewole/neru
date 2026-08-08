@@ -13,6 +13,7 @@ import (
 	"github.com/y3owk1n/neru/internal/domain"
 	"github.com/y3owk1n/neru/internal/domain/action"
 	"github.com/y3owk1n/neru/internal/domain/geometry"
+	domainHint "github.com/y3owk1n/neru/internal/domain/hint"
 	"github.com/y3owk1n/neru/internal/domain/modecmd"
 	"github.com/y3owk1n/neru/internal/domain/state"
 )
@@ -238,60 +239,65 @@ func (h *handlerState) handleHintsModeKey(key string) {
 
 	// Hint input processed by router; if exact match, perform action
 	if hintKeyResult.ExactHint() != nil {
-		hint := hintKeyResult.ExactHint()
-		center := hint.Element().Center()
-
-		h.logger.Debug("Found element", zap.String("label", hint.Label()))
-
-		pendingAction := h.hints.Context.PendingAction()
-		pendingModifier := h.hints.Context.PendingModifier()
-		repeat := h.hints.Context.Repeat()
-		cursorFollowSelection := h.hints.Context.CursorFollowSelection()
-		filterRoles := h.hints.Context.FilterRoles()
-		filterTextContains := h.hints.Context.FilterTextContains()
-		startWithSearch := h.hints.Context.StartWithSearch()
-		strategyOverride := h.hints.Context.StrategyOverride()
-		labelDirectionOverride := h.hints.Context.LabelDirectionOverride()
-		splitWord := h.hints.Context.SplitWord()
-
-		h.moveCursorAndHandleAction(
-			center,
-			pendingAction,
-			pendingModifier,
-			repeat ||
-				pendingAction == nil, // re-activate on repeat, or when no action (existing behavior)
-			func() {
-				h.activateHintModeInternal(modecmd.Activation{
-					Mode:                  domain.ModeHints,
-					CursorFollowSelection: &cursorFollowSelection,
-					FilterRoles:           filterRoles,
-					FilterTextContains:    filterTextContains,
-					Search:                &startWithSearch,
-					Strategy:              &strategyOverride,
-					LabelDirection:        &labelDirectionOverride,
-					SplitWord:             &splitWord,
-					// OnExit is left nil to preserve the stored steps across
-					// re-activation.
-				})
-				// Restore repeat, action and modifier on the fresh context so subsequent
-				// selections continue the repeat cycle.
-				// Guard: only restore if re-activation succeeded (mode is still hints).
-				if repeat && h.appState.CurrentMode() == domain.ModeHints &&
-					h.hints != nil && h.hints.Context != nil {
-					h.hints.Context.SetPendingAction(pendingAction)
-					h.hints.Context.SetPendingModifier(pendingModifier)
-					h.hints.Context.SetRepeat(true)
-					h.hints.Context.SetCursorFollowSelection(cursorFollowSelection)
-					h.hints.Context.SetFilterRoles(filterRoles)
-					h.hints.Context.SetFilterTextContains(filterTextContains)
-					h.hints.Context.SetStartWithSearch(startWithSearch)
-					h.hints.Context.SetStrategyOverride(strategyOverride)
-					h.hints.Context.SetLabelDirectionOverride(labelDirectionOverride)
-					h.hints.Context.SetSplitWord(splitWord)
-				}
-			},
-		)
+		h.selectHint(hintKeyResult.ExactHint())
 	}
+}
+
+// selectHint moves the cursor to hint's element and performs any pending
+// action, re-activating hints mode afterward the same way a typed exact
+// match does. It is the single path both typed selection
+// (handleHintsModeKey) and spoken selection (SelectHintByLabel) go through,
+// so the two cannot drift. Must be called with h.mu held.
+func (h *handlerState) selectHint(hint *domainHint.Interface) {
+	center := hint.Element().Center()
+
+	h.logger.Debug("Found element", zap.String("label", hint.Label()))
+
+	pendingAction := h.hints.Context.PendingAction()
+	pendingModifier := h.hints.Context.PendingModifier()
+	repeat := h.hints.Context.Repeat()
+	cursorFollowSelection := h.hints.Context.CursorFollowSelection()
+	filterRoles := h.hints.Context.FilterRoles()
+	filterTextContains := h.hints.Context.FilterTextContains()
+	startWithSearch := h.hints.Context.StartWithSearch()
+	strategyOverride := h.hints.Context.StrategyOverride()
+	splitWord := h.hints.Context.SplitWord()
+
+	h.moveCursorAndHandleAction(
+		center,
+		pendingAction,
+		pendingModifier,
+		repeat ||
+			pendingAction == nil, // re-activate on repeat, or when no action (existing behavior)
+		func() {
+			h.activateHintModeInternal(modecmd.Activation{
+				Mode:                  domain.ModeHints,
+				CursorFollowSelection: &cursorFollowSelection,
+				FilterRoles:           filterRoles,
+				FilterTextContains:    filterTextContains,
+				Search:                &startWithSearch,
+				Strategy:              &strategyOverride,
+				SplitWord:             &splitWord,
+				// OnExit is left nil to preserve the stored steps across
+				// re-activation.
+			})
+			// Restore repeat, action and modifier on the fresh context so subsequent
+			// selections continue the repeat cycle.
+			// Guard: only restore if re-activation succeeded (mode is still hints).
+			if repeat && h.appState.CurrentMode() == domain.ModeHints &&
+				h.hints != nil && h.hints.Context != nil {
+				h.hints.Context.SetPendingAction(pendingAction)
+				h.hints.Context.SetPendingModifier(pendingModifier)
+				h.hints.Context.SetRepeat(true)
+				h.hints.Context.SetCursorFollowSelection(cursorFollowSelection)
+				h.hints.Context.SetFilterRoles(filterRoles)
+				h.hints.Context.SetFilterTextContains(filterTextContains)
+				h.hints.Context.SetStartWithSearch(startWithSearch)
+				h.hints.Context.SetStrategyOverride(strategyOverride)
+				h.hints.Context.SetSplitWord(splitWord)
+			}
+		},
+	)
 }
 
 // handleSearchInputKey routes all keys while hint text search is active.

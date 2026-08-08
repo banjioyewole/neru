@@ -32,7 +32,6 @@ Use --no-reload to skip hotkey re-registration when setting multiple fields
 in sequence. Run "neru config reload" afterward to apply all changes at once.
 
 Examples:
-  neru config set hints.hint_characters "asdfghjkl"
   neru config set hints.ui.font_size 14
   neru config set general.passthrough_unbounded_keys true
   neru config set hints.clickable_roles "AXButton,AXLink"

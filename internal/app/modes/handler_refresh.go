@@ -59,7 +59,6 @@ func (h *Handler) RefreshHintsForScreenChange(
 	filterRoles := h.hints.Context.FilterRoles()
 	filterTextContains := h.hints.Context.FilterTextContains()
 	strategyOverride := h.hints.Context.StrategyOverride()
-	labelDirectionOverride := h.hints.Context.LabelDirectionOverride()
 
 	// Generate hints with filters preserved; SetHints below performs the
 	// single redraw after active-screen filtering.
@@ -74,7 +73,6 @@ func (h *Handler) RefreshHintsForScreenChange(
 		filterTextContains,
 		"",
 		strategyOverride,
-		labelDirectionOverride,
 		splitWordOverride,
 	)
 	if showHintsErr != nil {

@@ -311,17 +311,18 @@ nothing.
 - `--role` takes the role vocabulary listed by [`neru roles`](#neru-roles).
 - `--text` matches case-insensitively on a substring, and several values match
   any of them.
-- `--label-direction` is explained under
-  [Choosing a label direction](CONFIGURATION.md#choosing-a-label-direction).
+- `--label-direction` is accepted for backward compatibility but no longer has
+  any effect: hint labels are now drawn from a fixed word vocabulary with no
+  direction axis.
 - `--strategy vision` and `--split-word` are macOS only. See
   [Accessibility and hints](CROSS_PLATFORM.md#accessibility-and-hints).
 
 **Where the defaults come from**
 
 A flag left out inherits the configuration rather than a zero value:
-`--strategy` from [`hints.strategy`](CONFIGURATION.md#hints) and
-`--label-direction` from `hints.label_direction`. `--cursor-selection-mode`
-defaults to `follow`, and a presence-only flag left out asks for nothing.
+`--strategy` from [`hints.strategy`](CONFIGURATION.md#hints).
+`--cursor-selection-mode` defaults to `follow`, and a presence-only flag left
+out asks for nothing.
 
 ---
 
@@ -1234,7 +1235,7 @@ Requires a running daemon. Changes take effect immediately and are written to
 an override file so they survive restarts.
 
 `<key>` is a dotted TOML path matching the config file, for example
-`hints.hint_characters` or `general.passthrough_unbounded_keys`. Run
+`hints.max_depth` or `general.passthrough_unbounded_keys`. Run
 `neru config dump` to list every key and its current value.
 
 | Flag          | Type | Default | Description                                                                                                                            |
@@ -1261,7 +1262,6 @@ becomes `config.override.toml`, `my-neru.toml` becomes
 **Examples**
 
 ```bash
-neru config set hints.hint_characters "asdfghjkl"
 neru config set hints.ui.font_size 14
 neru config set general.passthrough_unbounded_keys true
 neru config set hints.clickable_roles "button,link"

@@ -63,7 +63,7 @@ excluded_apps = ["com.apple.finder", "com.test.app"]
 
 [hints]
 enabled = true
-hint_characters = "asdfqwertzxcvb"
+strategy = "vision"
 
 [hints.ui]
 font_size = 14
@@ -103,10 +103,10 @@ max_age = 30
 
 		// Verify the file was actually read and parsed correctly
 		cfg := loadResult.Config
-		if cfg.Hints.HintCharacters != "asdfqwertzxcvb" {
+		if cfg.Hints.Strategy != "vision" {
 			t.Errorf(
-				"Expected hint_characters 'asdfqwertzxcvb', got '%s'",
-				cfg.Hints.HintCharacters,
+				"Expected strategy 'vision', got '%s'",
+				cfg.Hints.Strategy,
 			)
 		}
 

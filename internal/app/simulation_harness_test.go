@@ -839,11 +839,56 @@ func (h *simHarness) pressHotkey(binding string) {
 	callback()
 }
 
-// typeLabel presses a hint or grid label one character at a time.
+// typeLabel presses a hint or grid label one character at a time, stopping as
+// soon as the pressed prefix uniquely identifies the label among whatever
+// hints are currently drawn — mirroring a real user, who stops typing once
+// the remaining candidates narrow to one (hint.Manager's "unique filtered
+// result selects" rule, see internal/domain/hint/manager.go). Word-vocabulary
+// hint labels are several characters long, so typing every character of a
+// label that already resolved earlier would send stray keystrokes into
+// whatever activation comes after the match. When label does not appear as a
+// prefix relationship against the currently drawn hint labels (e.g. it is a
+// text-search query, or a grid coordinate — lastHintLabels() only reports
+// hints-mode labels), the whole string is typed as before.
 func (h *simHarness) typeLabel(label string) {
-	for _, r := range strings.ToLower(label) {
+	target := strings.ToUpper(label)
+	prefixLen := h.uniqueHintPrefixLen(target)
+
+	for _, r := range strings.ToLower(target[:prefixLen]) {
 		h.press(string(r))
 	}
+}
+
+// uniqueHintPrefixLen returns the shortest prefix of target (uppercase) that
+// uniquely identifies it among whatever hints are currently drawn, the same
+// rule hint.Manager applies to matched input. Falls back to the whole string
+// when target has no prefix relationship to the currently drawn hint labels
+// (e.g. it is a text-search query, or a grid coordinate — lastHintLabels()
+// only reports hints-mode labels).
+func (h *simHarness) uniqueHintPrefixLen(target string) int {
+	labels := h.overlay.lastHintLabels()
+
+	for candidateLen := 1; candidateLen <= len(target); candidateLen++ {
+		if uniqueHintPrefix(target[:candidateLen], labels) {
+			return candidateLen
+		}
+	}
+
+	return len(target)
+}
+
+// uniqueHintPrefix reports whether prefix matches exactly one label in labels
+// (case-insensitively).
+func uniqueHintPrefix(prefix string, labels []string) bool {
+	count := 0
+
+	for _, l := range labels {
+		if strings.HasPrefix(strings.ToUpper(l), prefix) {
+			count++
+		}
+	}
+
+	return count == 1
 }
 
 // waitFor polls cond until it holds or the harness timeout elapses.

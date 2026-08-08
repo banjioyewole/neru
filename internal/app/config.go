@@ -8,7 +8,6 @@ import (
 	"github.com/y3owk1n/neru/internal/config"
 	"github.com/y3owk1n/neru/internal/config/loader"
 	"github.com/y3owk1n/neru/internal/derrors"
-	domainHint "github.com/y3owk1n/neru/internal/domain/hint"
 )
 
 // SetConfigField applies a single runtime config field change with full
@@ -178,20 +177,6 @@ func (a *App) updateComponentConfigs(cfg *config.Config) {
 func (a *App) updateServiceConfigs(cfg *config.Config) {
 	if a.hintService != nil {
 		a.hintService.UpdateConfig(cfg.Hints)
-
-		newGen, genErr := domainHint.NewAlphabetGenerator(
-			cfg.Hints.HintCharacters,
-			domainHint.LabelDirectionFromString(cfg.Hints.LabelDirectionForApp("")),
-		)
-		if genErr != nil {
-			a.logger.Error("Failed to create hint generator during reload", zap.Error(genErr))
-		} else {
-			a.hintService.UpdateGenerator(a.ctx, newGen)
-		}
-
-		// Re-register the opposite-direction generator so the per-activation
-		// override path keeps working after a config reload.
-		registerOppositeLabelDirectionGenerator(a, a.hintService, cfg)
 	}
 
 	if a.scrollService != nil {

@@ -188,6 +188,65 @@ func TestHandleAction_FeedModeWithoutModesHandler(t *testing.T) {
 	}
 }
 
+func TestHandleAction_SelectHintWithoutModesHandler(t *testing.T) {
+	controller := &ActionsHandler{logger: zap.NewNop()}
+
+	resp := controller.handleAction(context.Background(), ipc.Command{
+		Action: ActionCommand,
+		Args:   []string{"select_hint", "sierra"},
+	})
+
+	if resp.Success {
+		t.Fatal("handleAction(select_hint sierra) expected failure with nil modes handler, got success")
+	}
+
+	if resp.Code != ipc.CodeActionFailed {
+		t.Fatalf(
+			"handleAction(select_hint sierra) code = %q, want %q",
+			resp.Code,
+			ipc.CodeActionFailed,
+		)
+	}
+
+	if resp.Message != msgModesHandlerNotAvailable {
+		t.Fatalf(
+			"handleAction(select_hint sierra) message = %q, want %q",
+			resp.Message,
+			msgModesHandlerNotAvailable,
+		)
+	}
+}
+
+func TestHandleAction_SelectHintRequiresAWord(t *testing.T) {
+	// A nil modesHandler is fine here: the empty-word check runs first.
+	controller := &ActionsHandler{logger: zap.NewNop()}
+
+	tests := []struct {
+		name string
+		args []string
+	}{
+		{"no args", []string{"select_hint"}},
+		{"blank arg", []string{"select_hint", "   "}},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			resp := controller.handleAction(context.Background(), ipc.Command{
+				Action: ActionCommand,
+				Args:   tt.args,
+			})
+
+			if resp.Success {
+				t.Fatalf("handleAction(%v) expected failure, got success", tt.args)
+			}
+
+			if resp.Code != ipc.CodeInvalidInput {
+				t.Fatalf("handleAction(%v) code = %q, want %q", tt.args, resp.Code, ipc.CodeInvalidInput)
+			}
+		})
+	}
+}
+
 func TestParseActionArgs_BareFlag(t *testing.T) {
 	parsed, parseErr := parseActionArgs([]string{"--bare"})
 	if parseErr {

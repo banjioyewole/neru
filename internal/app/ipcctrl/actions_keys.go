@@ -219,6 +219,58 @@ func (h *ActionsHandler) handleCycleHintAction(
 	}
 }
 
+// handleSelectHintAction resolves a spoken/typed transcript to a hint label
+// and selects it. args is joined back into a single transcript so multi-word
+// phrases (e.g. "uh, sierra.") survive IPC argument splitting.
+//
+// The transcript is never logged (Conventions forbid logging hint search
+// terms) — only whether resolution succeeded.
+func (h *ActionsHandler) handleSelectHintAction(ctx context.Context, args []string) ipc.Response {
+	transcript := strings.TrimSpace(strings.Join(args, " "))
+	if transcript == "" {
+		return ipc.Response{
+			Success: false,
+			Message: "select_hint requires a word (e.g., action select_hint sierra)",
+			Code:    ipc.CodeInvalidInput,
+		}
+	}
+
+	if h.modesHandler == nil {
+		return ipc.Response{
+			Success: false,
+			Message: msgModesHandlerNotAvailable,
+			Code:    ipc.CodeActionFailed,
+		}
+	}
+
+	err := h.modesHandler.SelectHintByLabel(ctx, transcript)
+
+	h.logger.Debug("Selecting hint by label via IPC", zap.Bool("resolved", err == nil))
+
+	if err != nil {
+		code := ipc.CodeActionFailed
+		if derrors.IsCode(err, derrors.CodeInvalidInput) {
+			code = ipc.CodeInvalidInput
+		}
+
+		// The underlying error may echo the transcript back (e.g. an
+		// unresolved-word message) — never include err.Error() here, only a
+		// fixed message, so the transcript never leaves this process via a
+		// response that could be logged or displayed elsewhere.
+		return ipc.Response{
+			Success: false,
+			Message: "failed to select hint: no unique hint matched the given word",
+			Code:    code,
+		}
+	}
+
+	return ipc.Response{
+		Success: true,
+		Message: "select_hint performed",
+		Code:    ipc.CodeOK,
+	}
+}
+
 // handleSearchHintsAction activates text search in hints mode.
 func (h *ActionsHandler) handleSearchHintsAction() ipc.Response {
 	if h.modesHandler == nil {

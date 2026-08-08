@@ -208,7 +208,6 @@ func (h *handlerState) activateHintModeInternal(activation modecmd.Activation) {
 		activation.FilterTextContains,
 		bundleID,
 		overrides.strategy,
-		overrides.labelDirection,
 		overrides.splitWord,
 	)
 	if domainHintsErr != nil {

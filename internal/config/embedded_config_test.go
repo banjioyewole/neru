@@ -109,7 +109,6 @@ func TestCrossPlatformConfig_LoadsButSelectsNothing(t *testing.T) {
 	contents := `
 [hints]
 enabled = true
-hint_characters = "asdf"
 clickable_roles = ` + foreign + `
 `
 

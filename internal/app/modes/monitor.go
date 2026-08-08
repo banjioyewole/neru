@@ -292,7 +292,7 @@ func (h *Handler) refreshGridForMonitorMove(targetBounds image.Rectangle) {
 
 	characters := h.config.Grid.Characters
 	if strings.TrimSpace(characters) == "" {
-		characters = h.config.Hints.HintCharacters
+		characters = domain.DefaultHintCharacters
 	}
 
 	gridInstance := domainGrid.NewGridWithLabels(
@@ -369,7 +369,6 @@ func (h *Handler) refreshHintsForMonitorMove(
 	filterRoles := h.hints.Context.FilterRoles()
 	filterTextContains := h.hints.Context.FilterTextContains()
 	strategyOverride := h.hints.Context.StrategyOverride()
-	labelDirectionOverride := h.hints.Context.LabelDirectionOverride()
 
 	splitWordOverride := false
 	if h.hints != nil && h.hints.Context != nil {
@@ -382,7 +381,6 @@ func (h *Handler) refreshHintsForMonitorMove(
 		filterTextContains,
 		"",
 		strategyOverride,
-		labelDirectionOverride,
 		splitWordOverride,
 	)
 	if err != nil {

@@ -1322,6 +1322,43 @@ func hintBadgePlacement(
 	return badge, arrow, true
 }
 
+// splitHintLabel divides a hint label into a matched-prefix segment and an
+// unmatched tail so the renderer can draw each in a different color rather
+// than recoloring the whole label on any match — recoloring the whole label
+// is cosmetic for a 1-char label but hides how much of a multi-character
+// word label (e.g. "NOVEMBER") the user has actually typed so far.
+//
+// ok is false when there is nothing to split (no match, or the whole label
+// matched): the caller should draw label as one run in that case. Segment
+// widths come from badge.EstimateTextWidth, the same font-metric heuristic
+// that sizes the badge itself, so the split is only approximate — it does
+// not measure the exact glyph run the renderer will draw.
+//
+// This is pure geometry (no cgo), split out from drawHintLabel so it can be
+// unit tested without a Linux/cgo build.
+func splitHintLabel(
+	label, matchedPrefix string,
+	badgeRect image.Rectangle,
+	sfont float64,
+) (headRect, tailRect image.Rectangle, tail string, ok bool) {
+	if matchedPrefix == "" || len(matchedPrefix) >= len(label) {
+		return image.Rectangle{}, image.Rectangle{}, "", false
+	}
+
+	tail = label[len(matchedPrefix):]
+
+	headWidth := badge.EstimateTextWidth(matchedPrefix, sfont)
+	tailWidth := badge.EstimateTextWidth(tail, sfont)
+	totalWidth := headWidth + tailWidth
+
+	startX := badgeRect.Min.X + (badgeRect.Dx()-totalWidth)/2
+
+	headRect = image.Rect(startX, badgeRect.Min.Y, startX+headWidth, badgeRect.Max.Y)
+	tailRect = image.Rect(startX+headWidth, badgeRect.Min.Y, startX+totalWidth, badgeRect.Max.Y)
+
+	return headRect, tailRect, tail, true
+}
+
 func expandRect(rect image.Rectangle, amount int) image.Rectangle {
 	return image.Rect(
 		rect.Min.X-amount,

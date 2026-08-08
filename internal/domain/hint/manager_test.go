@@ -169,7 +169,7 @@ func TestHintManager_RouterIntegration(t *testing.T) {
 	testElements := []*element.Element{elem1, elem2, elem3}
 
 	// Create hint generator
-	gen, err := hint.NewAlphabetGenerator("asdf", hint.LabelDirectionReverse)
+	gen, err := hint.NewWordGenerator()
 	if err != nil {
 		t.Fatalf("Failed to create hint generator: %v", err)
 	}
@@ -378,95 +378,4 @@ func TestManager_NoMatchRepeatedUsesImmediateUpdate(t *testing.T) {
 		t.Errorf("Expected 3 callback calls after second invalid key, got %d", callCount)
 	}
 	mut.Unlock()
-}
-
-func TestManager_AcceptsNonLetterCharacters(t *testing.T) {
-	logger := logger.Get()
-	hintManager := hint.NewManager(logger, nil)
-
-	// Create test elements
-	elem1, _ := element.NewElement("elem1", image.Rect(10, 10, 50, 50), element.RoleButton)
-	elem2, _ := element.NewElement("elem2", image.Rect(60, 10, 100, 50), element.RoleButton)
-	elem3, _ := element.NewElement("elem3", image.Rect(10, 60, 50, 100), element.RoleButton)
-	testElements := []*element.Element{elem1, elem2, elem3}
-
-	// Create hint generator with numbers and symbols
-	gen, err := hint.NewAlphabetGenerator("a1!", hint.LabelDirectionReverse)
-	if err != nil {
-		t.Fatalf("Failed to create hint generator: %v", err)
-	}
-
-	// Generate hints
-	hintInterfaces, err := gen.Generate(context.Background(), testElements)
-	if err != nil {
-		t.Fatalf("Failed to generate hints: %v", err)
-	}
-
-	// Set hints
-	collection := hint.NewCollection(hintInterfaces)
-
-	err = hintManager.SetHints(collection)
-	if err != nil {
-		t.Fatalf("SetHints: %v", err)
-	}
-
-	// Test that letters are accepted and complete for single-char hints
-	matchedHint, complete, err := hintManager.HandleInput("a")
-	if err != nil {
-		t.Fatalf("HandleInput: %v", err)
-	}
-
-	if !complete {
-		t.Error("Expected complete after single letter matching hint")
-	}
-
-	if matchedHint == nil {
-		t.Error("Expected hint to be returned")
-	}
-
-	err = hintManager.Reset()
-	if err != nil {
-		t.Fatalf("Reset: %v", err)
-	}
-
-	// Test that numbers are accepted and complete for single-char hints
-	matchedHint2, complete2, err := hintManager.HandleInput("1")
-	if err != nil {
-		t.Fatalf("HandleInput: %v", err)
-	}
-
-	if !complete2 {
-		t.Error("Expected complete after single number matching hint")
-	}
-
-	if matchedHint2 == nil {
-		t.Error("Expected hint to be returned")
-	}
-
-	err = hintManager.Reset()
-	if err != nil {
-		t.Fatalf("Reset: %v", err)
-	}
-
-	// Test that symbols are accepted and complete for single-char hints
-	matchedHint3, complete3, err := hintManager.HandleInput("!")
-	if err != nil {
-		t.Fatalf("HandleInput: %v", err)
-	}
-
-	if !complete3 {
-		t.Error("Expected complete after single symbol matching hint")
-	}
-
-	if matchedHint3 == nil {
-		t.Error("Expected hint to be returned")
-	}
-
-	err = hintManager.Reset()
-	if err != nil {
-		t.Fatalf("Reset: %v", err)
-	}
-
-	// Note: Unicode characters like é and emoji are rejected at config validation level
-	// so they won't be present in hint_characters, making this test unnecessary
 }

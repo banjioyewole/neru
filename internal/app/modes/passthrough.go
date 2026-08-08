@@ -186,7 +186,6 @@ func (h *handlerState) passthroughTick(mode domain.Mode, session uint64) {
 		filterTextContains := h.hints.Context.FilterTextContains()
 		startWithSearch := h.hints.Context.StartWithSearch()
 		strategyOverride := h.hints.Context.StrategyOverride()
-		labelDirectionOverride := h.hints.Context.LabelDirectionOverride()
 		splitWord := h.hints.Context.SplitWord()
 		h.activateHintModeInternal(modecmd.Activation{
 			Mode:               domain.ModeHints,
@@ -194,7 +193,6 @@ func (h *handlerState) passthroughTick(mode domain.Mode, session uint64) {
 			FilterTextContains: filterTextContains,
 			Search:             &startWithSearch,
 			Strategy:           &strategyOverride,
-			LabelDirection:     &labelDirectionOverride,
 			SplitWord:          &splitWord,
 			// OnExit is left nil to preserve the stored steps across refresh.
 		})

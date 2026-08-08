@@ -411,6 +411,13 @@ func (o *Overlay) drawHintsInternal(hints []*Hint, style StyleMode, showArrow bo
 				width:  C.double(hint.Size().X),
 				height: C.double(hint.Size().Y),
 			},
+			// matchedPrefixLength is a byte length, but the Obj-C side
+			// consumes it as a UTF-16 NSRange length (overlay_darwin.m).
+			// That is only safe because the hint vocabulary is ASCII
+			// (vocab.Words() is ASCII-only by construction, pinned by
+			// vocab_test.go) — one byte per rune per UTF-16 code unit. A
+			// future non-English vocabulary must convert via
+			// utf16.Encode(...) instead of reusing the byte length here.
 			matchedPrefixLength: C.int(len(hint.MatchedPrefix())),
 		}
 

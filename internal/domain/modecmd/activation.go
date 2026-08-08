@@ -65,7 +65,4 @@ type Activation struct {
 
 	// Strategy chooses how elements are detected.
 	Strategy *string
-
-	// LabelDirection chooses how hint labels are enumerated.
-	LabelDirection *string
 }

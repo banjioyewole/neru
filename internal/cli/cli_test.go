@@ -188,6 +188,7 @@ func TestCommandInitialization(t *testing.T) {
 		"move_monitor":        false,
 		"move_cell":           false,
 		"cycle_hint":          false,
+		"select_hint <word>":  false,
 		"hide_cursor":         false,
 		"show_cursor":         false,
 	}

@@ -51,11 +51,11 @@ func TestService_Validate(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "invalid hints characters",
+			name: "invalid grid characters (non-ASCII)",
 			cfg: func() *config.Config {
 				c := config.DefaultConfig()
-				c.Hints.Enabled = true
-				c.Hints.HintCharacters = "a" // Too short
+				c.Grid.Enabled = true
+				c.Grid.Characters = "aé" // Non-ASCII
 
 				return c
 			}(),
@@ -98,21 +98,21 @@ func TestService_Validate(t *testing.T) {
 func TestService_Update(t *testing.T) {
 	service := loader.NewService(config.DefaultConfig(), "", zap.NewNop(), nil)
 	newConfig := config.DefaultConfig()
-	newConfig.Hints.HintCharacters = "xyz"
+	newConfig.Grid.Characters = "xyz"
 
 	updateErr := service.Update(newConfig)
 	if updateErr != nil {
 		t.Fatalf("Update() failed: %v", updateErr)
 	}
 
-	if service.Get().Hints.HintCharacters != "xyz" {
+	if service.Get().Grid.Characters != "xyz" {
 		t.Error("Update() did not update config")
 	}
 
 	// Test invalid update
 	invalidConfig := config.DefaultConfig()
-	invalidConfig.Hints.Enabled = true
-	invalidConfig.Hints.HintCharacters = "a" // Invalid
+	invalidConfig.Grid.Enabled = true
+	invalidConfig.Grid.Characters = "aé" // Invalid (non-ASCII)
 
 	updateErr = service.Update(invalidConfig)
 	if updateErr == nil {
@@ -120,7 +120,7 @@ func TestService_Update(t *testing.T) {
 	}
 
 	// Ensure config wasn't updated on error
-	if service.Get().Hints.HintCharacters == "a" {
+	if service.Get().Grid.Characters == "aé" {
 		t.Error("Update() updated config despite validation error")
 	}
 }
@@ -143,13 +143,13 @@ func TestService_Watch(t *testing.T) {
 
 	// Update config
 	newConfig := config.DefaultConfig()
-	newConfig.Hints.HintCharacters = "abc"
+	newConfig.Grid.Characters = "abc"
 	_ = service.Update(newConfig)
 
 	// Should receive update
 	select {
 	case config := <-channel:
-		if config.Hints.HintCharacters != "abc" {
+		if config.Grid.Characters != "abc" {
 			t.Error("Watch channel received incorrect update")
 		}
 	case <-time.After(100 * time.Millisecond):
@@ -176,11 +176,11 @@ func TestService_Replace(t *testing.T) {
 	}
 
 	modified := config.DefaultConfig()
-	modified.Hints.HintCharacters = "replaced"
+	modified.Grid.Characters = "replaced"
 	service.Replace(modified)
 
 	// Config should be updated.
-	if got := service.Get().Hints.HintCharacters; got != "replaced" {
+	if got := service.Get().Grid.Characters; got != "replaced" {
 		t.Errorf("Replace() did not update config: got %q, want %q", got, "replaced")
 	}
 
@@ -217,9 +217,9 @@ func TestService_Concurrency(t *testing.T) {
 
 			cfg := config.DefaultConfig()
 			if id%2 == 0 {
-				cfg.Hints.HintCharacters = "even"
+				cfg.Grid.Characters = "even"
 			} else {
-				cfg.Hints.HintCharacters = "odd"
+				cfg.Grid.Characters = "odd"
 			}
 
 			_ = service.Update(cfg)
@@ -237,15 +237,15 @@ func TestService_Concurrency(t *testing.T) {
 	}
 
 	final := config.DefaultConfig()
-	final.Hints.HintCharacters = concurrencyProbeChars
+	final.Grid.Characters = concurrencyProbeChars
 
 	err := service.Update(final)
 	if err != nil {
 		t.Fatalf("Update() after concurrent access error = %v, want nil", err)
 	}
 
-	if got := service.Get().Hints.HintCharacters; got != concurrencyProbeChars {
-		t.Errorf("Get().Hints.HintCharacters = %q, want %q", got, concurrencyProbeChars)
+	if got := service.Get().Grid.Characters; got != concurrencyProbeChars {
+		t.Errorf("Get().Grid.Characters = %q, want %q", got, concurrencyProbeChars)
 	}
 }
 

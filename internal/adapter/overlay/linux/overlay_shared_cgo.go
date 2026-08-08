@@ -333,9 +333,7 @@ func (o *sharedOverlay) drawHints(
 		}
 
 		textColor := style.TextColor()
-		if hint.MatchedPrefix() != "" {
-			textColor = style.MatchedTextColor()
-		}
+		matchedColor := style.MatchedTextColor()
 
 		label := hint.Label()
 		// Size the badge from the scaled font so it fits the text drawTextCentered
@@ -372,15 +370,39 @@ func (o *sharedOverlay) drawHints(
 			badgeRect, float64(radius), hintTailEdge(badgeRect, arrow, hasArrow), arrow,
 			fill, border, borderWidth,
 		)
-		o.drawTextCentered(
-			label, badgeRect,
-			style.FontFamily(),
-			fontSize,
-			badge.ParseHexARGB(textColor),
-		)
+
+		o.drawHintLabel(label, hint.MatchedPrefix(), badgeRect, style.FontFamily(), fontSize, sfont, textColor, matchedColor)
 	}
 
 	o.srf.surfaceFlush()
+}
+
+// drawHintLabel draws a hint's label, splitting it into a matched-prefix
+// segment (matchedColor) and an unmatched tail (textColor) when splitHintLabel
+// (manager.go, pure geometry) finds one to draw; otherwise the whole label
+// draws as one run, in matchedColor if it matched in full and textColor
+// otherwise.
+func (o *sharedOverlay) drawHintLabel(
+	label, matchedPrefix string,
+	badgeRect image.Rectangle,
+	fontFamily string,
+	fontSize, sfont float64,
+	textColor, matchedColor string,
+) {
+	headRect, tailRect, tail, ok := splitHintLabel(label, matchedPrefix, badgeRect, sfont)
+	if !ok {
+		color := textColor
+		if matchedPrefix == label && matchedPrefix != "" {
+			color = matchedColor
+		}
+
+		o.drawTextCentered(label, badgeRect, fontFamily, fontSize, badge.ParseHexARGB(color))
+
+		return
+	}
+
+	o.drawTextCentered(matchedPrefix, headRect, fontFamily, fontSize, badge.ParseHexARGB(matchedColor))
+	o.drawTextCentered(tail, tailRect, fontFamily, fontSize, badge.ParseHexARGB(textColor))
 }
 
 // drawMouseActionIndicator animates a transient click indicator centered on

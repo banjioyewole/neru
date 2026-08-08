@@ -19,27 +19,17 @@ import (
 // HintService orchestrates hint generation and display.
 // It coordinates between the accessibility system, vision detection,
 // hint generator, and overlay.
-//
-// Generators are cached per label direction so that switching direction
-// (e.g. via the --label-direction CLI flag) does not require rebuilding
-// the entire generator state. The configured label direction is always
-// available as the default.
 type HintService struct {
 	BaseService
 
-	mu               sync.RWMutex
-	generators       map[string]hint.Generator // keyed by label direction
-	defaultGenerator hint.Generator
-	config           config.HintsConfig
-	logger           *zap.Logger
-	vision           ports.VisionPort
+	mu        sync.RWMutex
+	generator hint.Generator
+	config    config.HintsConfig
+	logger    *zap.Logger
+	vision    ports.VisionPort
 }
 
 // NewHintService creates a new hint service with the given dependencies.
-//
-// The supplied generator is treated as the default (typically the configured
-// label direction). Callers that need additional directions for per-activation
-// overrides should use UpdateGenerator to register them.
 func NewHintService(
 	accessibility ports.AccessibilityPort,
 	overlay ports.OverlayPort,
@@ -53,19 +43,12 @@ func NewHintService(
 		logger = zap.NewNop()
 	}
 
-	generators := make(map[string]hint.Generator)
-
-	if generator != nil {
-		generators[generator.LabelDirection().String()] = generator
-	}
-
 	return &HintService{
-		BaseService:      NewBaseService(accessibility, overlay, system),
-		generators:       generators,
-		defaultGenerator: generator,
-		config:           config,
-		logger:           logger.Named("service.hints"),
-		vision:           vision,
+		BaseService: NewBaseService(accessibility, overlay, system),
+		generator:   generator,
+		config:      config,
+		logger:      logger.Named("service.hints"),
+		vision:      vision,
 	}
 }
 
@@ -78,7 +61,7 @@ func (s *HintService) ShowHints(
 ) ([]*hint.Interface, error) {
 	s.logger.Debug("Showing hints")
 
-	hints, err := s.GenerateHints(ctx, filterRoles, filterTextContains, "", "", "", false)
+	hints, err := s.GenerateHints(ctx, filterRoles, filterTextContains, "", "", false)
 	if err != nil {
 		return nil, err
 	}
@@ -109,7 +92,6 @@ func (s *HintService) GenerateHints(
 	filterTextContains []string,
 	bundleID string,
 	strategyOverride string,
-	labelDirectionOverride string,
 	splitWord bool,
 ) ([]*hint.Interface, error) {
 	s.mu.RLock()
@@ -136,11 +118,6 @@ func (s *HintService) GenerateHints(
 	strategy := cfg.StrategyForApp(bundleID)
 	if strategyOverride != "" {
 		strategy = strategyOverride
-	}
-
-	labelDirection := cfg.LabelDirectionForApp(bundleID)
-	if labelDirectionOverride != "" {
-		labelDirection = labelDirectionOverride
 	}
 
 	if splitWord && strategy != domain.StrategyVision {
@@ -174,7 +151,7 @@ func (s *HintService) GenerateHints(
 
 	s.logger.Debug("Found clickable elements", zap.Int("count", len(elements)))
 
-	return s.labelElements(ctx, elements, labelDirection)
+	return s.labelElements(ctx, elements)
 }
 
 // HideHints removes the hint overlay from the screen.
@@ -232,31 +209,16 @@ func (s *HintService) UpdateConfig(config config.HintsConfig) {
 		zap.Bool("include_screen_capture", config.IncludeScreenCaptureHints))
 }
 
-// Generator returns the registered hint generator for the given label
-// direction. An empty direction resolves to the default generator. If no
-// generator exists for the requested direction the default is returned as a
-// fallback so hint generation never fails purely because of a direction
-// mismatch (e.g. during the brief window after a config reload before the
-// caller registers the new generator).
-func (s *HintService) Generator(direction string) hint.Generator {
+// Generator returns the registered hint generator.
+func (s *HintService) Generator() hint.Generator {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	if direction != "" {
-		if g, ok := s.generators[direction]; ok {
-			return g
-		}
-	}
-
-	return s.defaultGenerator
+	return s.generator
 }
 
-// UpdateGenerator registers a hint generator for a specific label direction.
-// The first registration becomes the default fallback; subsequent
-// registrations for the *same* direction also replace the default so a
-// config reload that changes `hint_characters` keeps the empty/unknown
-// direction fallback in sync with the configured generator. A nil
-// generator is ignored to avoid replacing a live generator with nothing.
+// UpdateGenerator replaces the registered hint generator. A nil generator is
+// ignored to avoid replacing a live generator with nothing.
 func (s *HintService) UpdateGenerator(_ context.Context, generator hint.Generator) {
 	if generator == nil {
 		s.logger.Warn("Attempted to set nil generator, ignoring")
@@ -264,19 +226,12 @@ func (s *HintService) UpdateGenerator(_ context.Context, generator hint.Generato
 		return
 	}
 
-	direction := generator.LabelDirection().String()
-
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	if s.defaultGenerator == nil ||
-		s.defaultGenerator.LabelDirection() == generator.LabelDirection() {
-		s.defaultGenerator = generator
-	}
+	s.generator = generator
 
-	s.generators[direction] = generator
-
-	s.logger.Debug("Hint generator updated", zap.String("direction", direction))
+	s.logger.Debug("Hint generator updated")
 }
 
 // generateHintsAX collects elements using the AX tree (default strategy).
@@ -475,9 +430,8 @@ func (s *HintService) hintFilter(
 func (s *HintService) labelElements(
 	ctx context.Context,
 	elements []*element.Element,
-	labelDirection string,
 ) ([]*hint.Interface, error) {
-	gen := s.Generator(labelDirection)
+	gen := s.Generator()
 
 	maxHints := gen.MaxHints()
 	if maxHints > 0 && len(elements) > maxHints {
@@ -495,7 +449,6 @@ func (s *HintService) labelElements(
 		zap.Duration("elapsed", time.Since(genStart)),
 		zap.Int("element_count", len(elements)),
 		zap.Int("hint_count", len(hints)),
-		zap.String("label_direction", gen.LabelDirection().String()),
 		zap.Error(elementsErr))
 
 	if elementsErr != nil {
