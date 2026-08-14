@@ -329,7 +329,7 @@ func TestLaunchCommandExecution(t *testing.T) {
 	originalLaunchFunc := cli.LaunchFunc
 
 	// Set a mock LaunchFunc for testing
-	cli.LaunchFunc = func(configPath string) {
+	cli.LaunchFunc = func(configPath string, opts cli.LaunchOptions) {
 		// Mock launch - do nothing
 	}
 

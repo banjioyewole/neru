@@ -121,12 +121,17 @@ fallback where that tree is thin. See [Accessibility and hints](CROSS_PLATFORM.m
 Start the Neru daemon.
 
 ```
-neru launch [-c <path>] [--timeout <seconds>]
+neru launch [-c <path>] [--timeout <seconds>] [--no-systray]
 ```
 
 Runs the background process that owns the event tap, overlays, and IPC server.
-Does not require a running daemon; this is what starts one. Takes only the
-[global flags](#global-flags).
+Does not require a running daemon; this is what starts one.
+
+| Flag | Description |
+| --- | --- |
+| `--no-systray` | Run without a tray icon, whatever `[systray] enabled` says. For a supervising application that starts Neru and presents its own menu bar item; the same config launched by hand still gets a tray. |
+
+Plus the [global flags](#global-flags).
 
 ---
 
