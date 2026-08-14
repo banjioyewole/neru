@@ -29,7 +29,7 @@ const (
 var (
 	configPath string
 	// LaunchFunc is set by main to handle daemon launch.
-	LaunchFunc func(configPath string)
+	LaunchFunc func(configPath string, opts LaunchOptions)
 	// timeoutSec is overridden by the --timeout flag (default
 	// DefaultIPCTimeoutSeconds); kept in sync so any pre-parse use matches.
 	timeoutSec = DefaultIPCTimeoutSeconds
@@ -52,7 +52,9 @@ vim-like navigation capabilities across applications using accessibility APIs.`,
 	Version:       buildinfo.Version,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if IsRunningFromAppBundle() && len(args) == 0 {
-			launchProgram(cmd, configPath)
+			// A bundle double-click has no flags to carry, and the tray is the
+			// only way to reach a daemon started that way.
+			launchProgram(cmd, configPath, LaunchOptions{})
 
 			return nil
 		}
@@ -150,7 +152,14 @@ func IsRunningFromAppBundle() bool {
 	return isRunningFromAppBundle()
 }
 
-func launchProgram(cmd *cobra.Command, cfgPath string) {
+// LaunchOptions carries the launch-time decisions that belong to the invocation
+// rather than to the configuration file, so a reload cannot undo them.
+type LaunchOptions struct {
+	// NoSystray suppresses the tray icon regardless of [systray] enabled.
+	NoSystray bool
+}
+
+func launchProgram(cmd *cobra.Command, cfgPath string, opts LaunchOptions) {
 	if ipc.IsServerRunning() {
 		cmd.Println("Neru is already running")
 		os.Exit(0)
@@ -163,7 +172,7 @@ func launchProgram(cmd *cobra.Command, cfgPath string) {
 	detachConsoleIfOwned()
 
 	if LaunchFunc != nil {
-		LaunchFunc(cfgPath)
+		LaunchFunc(cfgPath, opts)
 	} else {
 		cmd.PrintErrln("Error: Launch function not initialized")
 		os.Exit(1)

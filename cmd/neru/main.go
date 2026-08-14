@@ -11,6 +11,7 @@ import (
 
 	"github.com/y3owk1n/neru/internal/adapter/platform"
 	"github.com/y3owk1n/neru/internal/app"
+	"github.com/y3owk1n/neru/internal/cli"
 	"github.com/y3owk1n/neru/internal/config"
 	"github.com/y3owk1n/neru/internal/config/loader"
 	"github.com/y3owk1n/neru/internal/ports"
@@ -33,7 +34,7 @@ func (p *alertProvider) ShowAlert(ctx context.Context, title, message string) er
 }
 
 // LaunchDaemon is called by the CLI to launch the daemon.
-func LaunchDaemon(configPath string) {
+func LaunchDaemon(configPath string, opts cli.LaunchOptions) {
 	// Create system port early for startup notice and alerts.
 	systemPort, sysPortErr := platform.NewSystemPort()
 
@@ -67,6 +68,14 @@ func LaunchDaemon(configPath string) {
 	}
 
 	handleAccessibilityPermissionStartup()
+
+	// Applied after the config is loaded and validated, and to the in-memory
+	// copy only: the file keeps saying what the user wants, and a `neru launch`
+	// without the flag still gets a tray. Only the startup phase reads this, so
+	// a later config reload cannot resurrect an icon this daemon never made.
+	if opts.NoSystray {
+		configResult.Config.Systray.Enabled = false
+	}
 
 	app, appErr := app.New(
 		app.WithConfig(configResult.Config),
