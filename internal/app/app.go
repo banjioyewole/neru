@@ -52,7 +52,11 @@ type App struct {
 	// logged once the logger exists (WithConfigWarnings).
 	configWarnings []string
 	ConfigPath     string
-	logger         *zap.Logger
+
+	// suppressedHotkeys are chords the launch flags said this daemon must not
+	// bind. Held here only to reach the config service in startup.
+	suppressedHotkeys []string
+	logger            *zap.Logger
 
 	systemPort    ports.SystemPort
 	motion        *heldmotion.Controller

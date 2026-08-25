@@ -157,6 +157,11 @@ func IsRunningFromAppBundle() bool {
 type LaunchOptions struct {
 	// NoSystray suppresses the tray icon regardless of [systray] enabled.
 	NoSystray bool
+
+	// DisabledHotkeys are chords this daemon will not bind, whatever the config
+	// file says. Unlike NoSystray these outlive the startup phase: hotkeys come
+	// back on every config reload, so the suppression has to sit in the loader.
+	DisabledHotkeys []string
 }
 
 func launchProgram(cmd *cobra.Command, cfgPath string, opts LaunchOptions) {

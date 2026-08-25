@@ -55,7 +55,7 @@ func LaunchDaemon(configPath string, opts cli.LaunchOptions) {
 		configPath,
 		zap.NewNop(),
 		newAlertProvider(systemPort),
-	)
+	).WithSuppressedHotkeys(opts.DisabledHotkeys)
 
 	// The display backend is a limit the platform column cannot say, so the
 	// root that knows the backend hands the loader the words it cannot honor.
@@ -89,6 +89,7 @@ func LaunchDaemon(configPath string, opts cli.LaunchOptions) {
 		app.WithWrittenConfig(configResult.Written),
 		app.WithConfigPath(configResult.ConfigPath),
 		app.WithConfigWarnings(configResult.Warnings),
+		app.WithSuppressedHotkeys(opts.DisabledHotkeys),
 	)
 	if appErr != nil {
 		fmt.Fprintf(os.Stderr, "Error creating app: %v\n", appErr)

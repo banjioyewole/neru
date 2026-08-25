@@ -252,6 +252,14 @@ type Service struct {
 	// detected here, because the detector is an adapter and this package sits
 	// below the adapters; WithBackendInert says who supplies it.
 	backendInert func(*config.Config, config.Written) parity.Declaration
+
+	// suppressedHotkeys are chords this daemon refuses to bind, whatever the
+	// config says. Set once from the launch flags and never from a file, so it
+	// belongs to the invocation rather than to the user's configuration. Held
+	// on the service rather than applied once at startup because every reload
+	// rebuilds the bindings from the file, and a reload must not hand back a
+	// chord the process was started without.
+	suppressedHotkeys []string
 }
 
 // NewService creates a new configuration service.
@@ -289,6 +297,63 @@ func (s *Service) WithBackendInert(
 	s.backendInert = inert
 
 	return s
+}
+
+// WithSuppressedHotkeys names chords this daemon will not bind, whatever the
+// config file asks for. Each entry is a chord in the usual `[hotkeys]` spelling
+// ("Primary+Shift+G"); matching is by normalized form, so casing and modifier
+// order do not matter.
+func (s *Service) WithSuppressedHotkeys(chords []string) *Service {
+	s.suppressedHotkeys = slices.Clone(chords)
+
+	return s
+}
+
+// suppressHotkeys drops every suppressed chord from the loaded config, both the
+// global bindings and any per-app override that would rebind the same chord
+// while one app is focused. Called on the way out of every load, including the
+// ones that fall back to the defaults: a refused config leaves the daemon on
+// stock bindings, which is exactly where the chord we were told to drop lives.
+//
+// Both halves of the result are cleared. A runtime `neru config set` derives
+// its new configuration from the written half, so a chord left there would be
+// bound again by the first field change after launch.
+func (s *Service) suppressHotkeys(result *config.LoadResult) {
+	if len(s.suppressedHotkeys) == 0 || result == nil {
+		return
+	}
+
+	for _, chord := range s.suppressedHotkeys {
+		normalized := config.NormalizeKeyForComparison(chord)
+
+		for _, cfg := range []*config.Config{result.Config, result.Written} {
+			dropHotkey(cfg, normalized)
+		}
+
+		s.logger.Info("Hotkey suppressed for this daemon", zap.String("key", chord))
+	}
+}
+
+// dropHotkey deletes the chord, already normalized, from cfg's global bindings
+// and from every per-app override. A nil cfg has nothing to drop.
+func dropHotkey(cfg *config.Config, normalized string) {
+	if cfg == nil {
+		return
+	}
+
+	for key := range cfg.Hotkeys.Bindings {
+		if config.NormalizeKeyForComparison(key) == normalized {
+			delete(cfg.Hotkeys.Bindings, key)
+		}
+	}
+
+	for i := range cfg.AppConfigs {
+		for key := range cfg.AppConfigs[i].Hotkeys {
+			if config.NormalizeKeyForComparison(key) == normalized {
+				delete(cfg.AppConfigs[i].Hotkeys, key)
+			}
+		}
+	}
 }
 
 // WithDefaults sets the base defaults used by LoadWithValidation. This is
