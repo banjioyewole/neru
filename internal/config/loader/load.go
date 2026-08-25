@@ -20,6 +20,18 @@ const appConfigsKey = "app_configs"
 // caller can keep running on the defaults and still tell the user what was
 // wrong. Any phase below can end the load.
 func (s *Service) LoadWithValidation(path string) *config.LoadResult {
+	result := s.loadWithValidation(path)
+
+	// Last, and outside the load proper, so it also covers the paths that
+	// refuse the file and fall back to the defaults.
+	s.suppressHotkeys(result.Config)
+
+	return result
+}
+
+// loadWithValidation is the load itself, without the launch-time suppression
+// LoadWithValidation applies to whatever it returns.
+func (s *Service) loadWithValidation(path string) *config.LoadResult {
 	result := &config.LoadResult{
 		Config:     s.baseConfig(),
 		ConfigPath: path,

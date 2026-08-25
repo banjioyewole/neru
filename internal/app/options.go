@@ -30,6 +30,17 @@ func WithConfigPath(path string) Option {
 	}
 }
 
+// WithSuppressedHotkeys names chords this daemon will not bind, whatever the
+// config says. Passed on to the config service so it survives a reload, which
+// rebuilds every binding from the file.
+func WithSuppressedHotkeys(chords []string) Option {
+	return func(a *App) error {
+		a.suppressedHotkeys = chords
+
+		return nil
+	}
+}
+
 // WithLogger sets the application logger.
 func WithLogger(logger *zap.Logger) Option {
 	return func(a *App) error {

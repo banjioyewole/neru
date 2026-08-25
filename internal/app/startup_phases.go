@@ -88,7 +88,8 @@ func initializeServicesAndAdapters(app *App) error {
 	logger := app.logger
 
 	// Initialize config service
-	cfgService := loader.NewService(cfg, app.ConfigPath, logger, app.systemPort)
+	cfgService := loader.NewService(cfg, app.ConfigPath, logger, app.systemPort).
+		WithSuppressedHotkeys(app.suppressedHotkeys)
 	configurePlatformRuntimeConfigProviders(cfgService)
 
 	// Initialize adapters

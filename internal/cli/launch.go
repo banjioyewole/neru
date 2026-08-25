@@ -10,6 +10,12 @@ import (
 // not both appear; the same config run by hand still gets a tray.
 var noSystray bool
 
+// disabledHotkeys backs --disable-hotkey. Like --no-systray, it describes this
+// invocation rather than the user's preferences: a supervising app that drives
+// Neru through the CLI passes the chords it does not want reaching the user, and
+// the same config run by hand keeps every one of them.
+var disabledHotkeys []string
+
 // LaunchCmd is the CLI launch command.
 var LaunchCmd = &cobra.Command{
 	Use:   "launch",
@@ -32,7 +38,7 @@ Use 'neru stop' to pause functionality (daemon stays running).`,
 // so it can be tested without launchProgram, which either becomes the daemon or
 // exits when one is already running.
 func launchOptions() LaunchOptions {
-	return LaunchOptions{NoSystray: noSystray}
+	return LaunchOptions{NoSystray: noSystray, DisabledHotkeys: disabledHotkeys}
 }
 
 func init() {
@@ -41,6 +47,14 @@ func init() {
 		"no-systray",
 		false,
 		"Run without a system tray icon, whatever the config says",
+	)
+
+	LaunchCmd.Flags().StringArrayVar(
+		&disabledHotkeys,
+		"disable-hotkey",
+		nil,
+		"Chord this daemon will not bind, whatever the config says "+
+			"(repeatable, e.g. --disable-hotkey \"Primary+Shift+G\")",
 	)
 
 	RootCmd.AddCommand(LaunchCmd)

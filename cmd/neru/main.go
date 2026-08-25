@@ -55,7 +55,7 @@ func LaunchDaemon(configPath string, opts cli.LaunchOptions) {
 		configPath,
 		zap.NewNop(),
 		newAlertProvider(systemPort),
-	)
+	).WithSuppressedHotkeys(opts.DisabledHotkeys)
 	configResult := service.LoadWithValidation(configPath)
 
 	// If there's a validation error, show alert and exit
@@ -80,6 +80,7 @@ func LaunchDaemon(configPath string, opts cli.LaunchOptions) {
 	app, appErr := app.New(
 		app.WithConfig(configResult.Config),
 		app.WithConfigPath(configResult.ConfigPath),
+		app.WithSuppressedHotkeys(opts.DisabledHotkeys),
 	)
 	if appErr != nil {
 		fmt.Fprintf(os.Stderr, "Error creating app: %v\n", appErr)

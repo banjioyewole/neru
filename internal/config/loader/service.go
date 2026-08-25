@@ -233,6 +233,14 @@ type Service struct {
 	// LoadWithValidation. It is initialized from config.DefaultConfigForDecoding()
 	// in NewService, but can be overridden by tests via withDefaults.
 	defaults *config.Config
+
+	// suppressedHotkeys are chords this daemon refuses to bind, whatever the
+	// config says. Set once from the launch flags and never from a file, so it
+	// belongs to the invocation rather than to the user's configuration. Held
+	// on the service rather than applied once at startup because every reload
+	// rebuilds the bindings from the file, and a reload must not hand back a
+	// chord the process was started without.
+	suppressedHotkeys []string
 }
 
 // NewService creates a new configuration service.
@@ -256,6 +264,47 @@ func NewService(
 		path:          path,
 		logger:        logger.Named("config"),
 		alertProvider: alertProvider,
+	}
+}
+
+// WithSuppressedHotkeys names chords this daemon will not bind, whatever the
+// config file asks for. Each entry is a chord in the usual `[hotkeys]` spelling
+// ("Primary+Shift+G"); matching is by normalized form, so casing and modifier
+// order do not matter.
+func (s *Service) WithSuppressedHotkeys(chords []string) *Service {
+	s.suppressedHotkeys = slices.Clone(chords)
+
+	return s
+}
+
+// suppressHotkeys drops every suppressed chord from the loaded config, both the
+// global bindings and any per-app override that would rebind the same chord
+// while one app is focused. Called on the way out of every load, including the
+// ones that fall back to the defaults: a refused config leaves the daemon on
+// stock bindings, which is exactly where the chord we were told to drop lives.
+func (s *Service) suppressHotkeys(cfg *config.Config) {
+	if len(s.suppressedHotkeys) == 0 || cfg == nil {
+		return
+	}
+
+	for _, chord := range s.suppressedHotkeys {
+		normalized := config.NormalizeKeyForComparison(chord)
+
+		for key := range cfg.Hotkeys.Bindings {
+			if config.NormalizeKeyForComparison(key) == normalized {
+				delete(cfg.Hotkeys.Bindings, key)
+			}
+		}
+
+		for i := range cfg.AppConfigs {
+			for key := range cfg.AppConfigs[i].Hotkeys {
+				if config.NormalizeKeyForComparison(key) == normalized {
+					delete(cfg.AppConfigs[i].Hotkeys, key)
+				}
+			}
+		}
+
+		s.logger.Info("Hotkey suppressed for this daemon", zap.String("key", chord))
 	}
 }
 

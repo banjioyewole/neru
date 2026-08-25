@@ -120,7 +120,7 @@ only, and `scroll_left` / `scroll_right` have no effect on Windows. See
 Start the Neru daemon.
 
 ```
-neru launch [-c <path>] [--timeout <seconds>] [--no-systray]
+neru launch [-c <path>] [--timeout <seconds>] [--no-systray] [--disable-hotkey <chord>]
 ```
 
 Runs the background process that owns the event tap, overlays, and IPC server.
@@ -129,6 +129,7 @@ Does not require a running daemon; this is what starts one.
 | Flag | Description |
 | --- | --- |
 | `--no-systray` | Run without a tray icon, whatever `[systray] enabled` says. For a supervising application that starts Neru and presents its own menu bar item; the same config launched by hand still gets a tray. |
+| `--disable-hotkey <chord>` | Do not bind this chord, whatever the config says. Repeatable. Matching is by normalized chord, so casing and modifier order do not matter, and it covers per-app `[[app_configs]]` overrides of the same chord as well as the global `[hotkeys]` binding. Survives a config reload. For a supervising application that drives Neru through the CLI and does not want its launcher chords reaching the user; the same config launched by hand keeps every binding. Prefer `"<chord>" = "__disabled__"` in the config file when the intent is to turn a chord off generally. |
 
 Plus the [global flags](#global-flags).
 
