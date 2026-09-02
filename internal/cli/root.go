@@ -162,6 +162,12 @@ type LaunchOptions struct {
 	// file says. Unlike NoSystray these outlive the startup phase: hotkeys come
 	// back on every config reload, so the suppression has to sit in the loader.
 	DisabledHotkeys []string
+
+	// NoStickyModifiers turns off sticky-modifier detection regardless of
+	// [sticky_modifiers] enabled. Like DisabledHotkeys it lives in the loader
+	// rather than the startup phase: the setting is read afresh on every mode
+	// activation, so a config reload would otherwise bring it back.
+	NoStickyModifiers bool
 }
 
 func launchProgram(cmd *cobra.Command, cfgPath string, opts LaunchOptions) {

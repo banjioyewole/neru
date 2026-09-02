@@ -30,6 +30,7 @@ func (s *Service) LoadWithValidation(path string) *config.LoadResult {
 	// Last, and outside the load proper, so it also covers the paths that
 	// refuse the file and fall back to the defaults.
 	s.suppressHotkeys(result)
+	s.disableStickyModifiers(result)
 
 	return result
 }

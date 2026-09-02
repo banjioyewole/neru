@@ -68,6 +68,17 @@ func WithSuppressedHotkeys(chords []string) Option {
 	}
 }
 
+// WithStickyModifiersDisabled turns sticky modifiers off for this daemon,
+// whatever the config says. Passed on to the config service for the same
+// reason as WithSuppressedHotkeys: a reload reads the setting from the file.
+func WithStickyModifiersDisabled(disabled bool) Option {
+	return func(a *App) error {
+		a.stickyModifiersDisabled = disabled
+
+		return nil
+	}
+}
+
 // WithLogger sets the application logger.
 func WithLogger(logger *zap.Logger) Option {
 	return func(a *App) error {

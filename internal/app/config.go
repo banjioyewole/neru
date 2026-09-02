@@ -21,7 +21,8 @@ import (
 func (a *App) newConfigService(logger *zap.Logger) *loader.Service {
 	svc := loader.NewService(a.config, a.ConfigPath, logger, a.systemPort).
 		WithWritten(a.writtenConfig).
-		WithSuppressedHotkeys(a.suppressedHotkeys)
+		WithSuppressedHotkeys(a.suppressedHotkeys).
+		WithStickyModifiersDisabled(a.stickyModifiersDisabled)
 
 	if platform.CurrentProfile().DisplayServer == platform.DisplayServerX11 {
 		svc = svc.WithBackendInert(config.X11InertWords)

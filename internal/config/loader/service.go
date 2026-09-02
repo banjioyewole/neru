@@ -260,6 +260,13 @@ type Service struct {
 	// rebuilds the bindings from the file, and a reload must not hand back a
 	// chord the process was started without.
 	suppressedHotkeys []string
+
+	// stickyModifiersDisabled turns sticky modifiers off for this daemon,
+	// whatever the config says. Held here for the same reason as
+	// suppressedHotkeys: the mode handler reads the setting afresh on every
+	// mode activation, and a reload must not hand back behaviour the process
+	// was started without.
+	stickyModifiersDisabled bool
 }
 
 // NewService creates a new configuration service.
@@ -354,6 +361,39 @@ func dropHotkey(cfg *config.Config, normalized string) {
 			}
 		}
 	}
+}
+
+// WithStickyModifiersDisabled turns sticky modifiers off for this daemon,
+// whatever the config file asks for.
+//
+// The setting exists because a modifier tap is a useful thing to bind to on its
+// own. The cost is that detection consumes the modifier's key-up while a
+// navigation mode is active, which is invisible until something else on the
+// machine is watching for that same key-up — a supervising app holding a
+// modifier across the mode activation it just triggered never sees the release,
+// and waits forever for a gesture that is already over.
+func (s *Service) WithStickyModifiersDisabled(disabled bool) *Service {
+	s.stickyModifiersDisabled = disabled
+
+	return s
+}
+
+// disableStickyModifiers clears the setting on the way out of every load,
+// including the ones that fall back to the defaults — where sticky modifiers
+// are on. Both halves of the result are cleared, for the reason
+// suppressHotkeys gives.
+func (s *Service) disableStickyModifiers(result *config.LoadResult) {
+	if !s.stickyModifiersDisabled || result == nil {
+		return
+	}
+
+	for _, cfg := range []*config.Config{result.Config, result.Written} {
+		if cfg != nil {
+			cfg.StickyModifiers.Enabled = false
+		}
+	}
+
+	s.logger.Info("Sticky modifiers disabled for this daemon")
 }
 
 // WithDefaults sets the base defaults used by LoadWithValidation. This is

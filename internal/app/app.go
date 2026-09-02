@@ -56,7 +56,10 @@ type App struct {
 	// suppressedHotkeys are chords the launch flags said this daemon must not
 	// bind. Held here only to reach the config service in startup.
 	suppressedHotkeys []string
-	logger            *zap.Logger
+	// stickyModifiersDisabled is --no-sticky-modifiers, held for the same
+	// reason.
+	stickyModifiersDisabled bool
+	logger                  *zap.Logger
 
 	systemPort    ports.SystemPort
 	motion        *heldmotion.Controller
