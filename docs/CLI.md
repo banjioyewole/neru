@@ -121,6 +121,7 @@ Start the Neru daemon.
 
 ```
 neru launch [-c <path>] [--timeout <seconds>] [--no-systray] [--disable-hotkey <chord>]
+            [--no-sticky-modifiers]
 ```
 
 Runs the background process that owns the event tap, overlays, and IPC server.
@@ -130,6 +131,7 @@ Does not require a running daemon; this is what starts one.
 | --- | --- |
 | `--no-systray` | Run without a tray icon, whatever `[systray] enabled` says. For a supervising application that starts Neru and presents its own menu bar item; the same config launched by hand still gets a tray. |
 | `--disable-hotkey <chord>` | Do not bind this chord, whatever the config says. Repeatable. Matching is by normalized chord, so casing and modifier order do not matter, and it covers per-app `[[app_configs]]` overrides of the same chord as well as the global `[hotkeys]` binding. Survives a config reload. For a supervising application that drives Neru through the CLI and does not want its launcher chords reaching the user; the same config launched by hand keeps every binding. Prefer `"<chord>" = "__disabled__"` in the config file when the intent is to turn a chord off generally. |
+| `--no-sticky-modifiers` | Run with sticky modifiers off, whatever `[sticky_modifiers] enabled` says. Survives a config reload. Sticky-modifier detection consumes a modifier's key-up while a navigation mode is active, so anything else on the machine watching for that release never sees it — pass this when a supervising application holds a modifier across the mode activation it triggered. The same config launched by hand keeps sticky modifiers. |
 
 Plus the [global flags](#global-flags).
 

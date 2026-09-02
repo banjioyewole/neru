@@ -241,6 +241,13 @@ type Service struct {
 	// rebuilds the bindings from the file, and a reload must not hand back a
 	// chord the process was started without.
 	suppressedHotkeys []string
+
+	// stickyModifiersDisabled turns sticky modifiers off for this daemon,
+	// whatever the config says. Held here for the same reason as
+	// suppressedHotkeys: the mode handler reads the setting afresh on every
+	// mode activation, and a reload must not hand back behaviour the process
+	// was started without.
+	stickyModifiersDisabled bool
 }
 
 // NewService creates a new configuration service.
@@ -306,6 +313,34 @@ func (s *Service) suppressHotkeys(cfg *config.Config) {
 
 		s.logger.Info("Hotkey suppressed for this daemon", zap.String("key", chord))
 	}
+}
+
+// WithStickyModifiersDisabled turns sticky modifiers off for this daemon,
+// whatever the config file asks for.
+//
+// The setting exists because a modifier tap is a useful thing to bind to on its
+// own. The cost is that detection consumes the modifier's key-up while a
+// navigation mode is active, which is invisible until something else on the
+// machine is watching for that same key-up — a supervising app holding a
+// modifier across the mode activation it just triggered never sees the release,
+// and waits forever for a gesture that is already over.
+func (s *Service) WithStickyModifiersDisabled(disabled bool) *Service {
+	s.stickyModifiersDisabled = disabled
+
+	return s
+}
+
+// disableStickyModifiers clears the setting on the way out of every load,
+// including the ones that fall back to the defaults — where sticky modifiers
+// are on.
+func (s *Service) disableStickyModifiers(cfg *config.Config) {
+	if !s.stickyModifiersDisabled || cfg == nil || !cfg.StickyModifiers.Enabled {
+		return
+	}
+
+	cfg.StickyModifiers.Enabled = false
+
+	s.logger.Info("Sticky modifiers disabled for this daemon")
 }
 
 // WithDefaults sets the base defaults used by LoadWithValidation. This is

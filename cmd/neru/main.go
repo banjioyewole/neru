@@ -55,7 +55,8 @@ func LaunchDaemon(configPath string, opts cli.LaunchOptions) {
 		configPath,
 		zap.NewNop(),
 		newAlertProvider(systemPort),
-	).WithSuppressedHotkeys(opts.DisabledHotkeys)
+	).WithSuppressedHotkeys(opts.DisabledHotkeys).
+		WithStickyModifiersDisabled(opts.NoStickyModifiers)
 	configResult := service.LoadWithValidation(configPath)
 
 	// If there's a validation error, show alert and exit

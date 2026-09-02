@@ -16,6 +16,14 @@ var noSystray bool
 // the same config run by hand keeps every one of them.
 var disabledHotkeys []string
 
+// noStickyModifiers backs --no-sticky-modifiers. Same character as the two
+// above: a supervising app that holds a modifier of its own across a mode
+// activation needs the modifier's key-up to reach it, and sticky-modifier
+// detection consumes that event while a nav mode is up. The user's
+// `[sticky_modifiers] enabled` is left alone, so a `neru launch` by hand still
+// gets them.
+var noStickyModifiers bool
+
 // LaunchCmd is the CLI launch command.
 var LaunchCmd = &cobra.Command{
 	Use:   "launch",
@@ -38,7 +46,11 @@ Use 'neru stop' to pause functionality (daemon stays running).`,
 // so it can be tested without launchProgram, which either becomes the daemon or
 // exits when one is already running.
 func launchOptions() LaunchOptions {
-	return LaunchOptions{NoSystray: noSystray, DisabledHotkeys: disabledHotkeys}
+	return LaunchOptions{
+		NoSystray:         noSystray,
+		DisabledHotkeys:   disabledHotkeys,
+		NoStickyModifiers: noStickyModifiers,
+	}
 }
 
 func init() {
@@ -55,6 +67,13 @@ func init() {
 		nil,
 		"Chord this daemon will not bind, whatever the config says "+
 			"(repeatable, e.g. --disable-hotkey \"Primary+Shift+G\")",
+	)
+
+	LaunchCmd.Flags().BoolVar(
+		&noStickyModifiers,
+		"no-sticky-modifiers",
+		false,
+		"Run without sticky modifiers, whatever the config says",
 	)
 
 	RootCmd.AddCommand(LaunchCmd)
