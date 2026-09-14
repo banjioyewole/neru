@@ -319,14 +319,40 @@ func (o *Overlay) DrawRecursiveGrid(
 
 	cells := make([]C.GridCell, keyCount)
 
+	shouldAnimate := o.Config().Animation.Enabled && o.hasLast && depth != o.lastDepth &&
+		!o.lastBounds.Empty()
+
+	// The size the labels ask for grows with the cells, with the configured
+	// size as the floor, so the spoken word stays legible from the first depth
+	// to the last. Every cell at one depth is the same size, so one measurement
+	// answers for the whole draw. See LabelFontSize. The shared fit then holds
+	// it to what the cells and a transition can take, as it does for every
+	// backend.
+	grown := style
+	if len(cellRects) > 0 {
+		grown.fontSize = LabelFontSize(cellRects[0], style.FontSize())
+	}
+
+	// Points and pixels are one unit here, so the scale is 1. The animation's
+	// frames never return to Go, so what a transition holds is settled now.
+	fitted := grown.FitDraw(1, cellRects, nextDims)
+	held := fitted
+
+	if shouldAnimate {
+		held = grown.FitTransition(1, o.transitionOrigins(dims), cellRects, nextDims)
+	}
+
+	// A word is chosen at the size the transition holds when it shows one,
+	// the smaller of the two, so it fits on every frame and not only the last.
+	wordSize := int(fitted.LabelSize)
+	if held.ShowLabel {
+		wordSize = int(min(fitted.LabelSize, held.LabelSize))
+	}
+
 	for idx, cellRect := range cellRects {
-		labelStr := ""
-		if idx < len(keyRunes) {
-			labelStr = string(keyRunes[idx])
-		}
 		label := style.LabelChar()
-		if label == "" {
-			label = strings.ToUpper(labelStr)
+		if label == "" && idx < len(keyRunes) {
+			label = CellLabel(keyRunes[idx], cellRect, wordSize)
 		}
 		cells[idx] = C.GridCell{
 			label:               o.getOrCacheLabel(label),
@@ -356,18 +382,6 @@ func (o *Overlay) DrawRecursiveGrid(
 		cached.SubKeyTextColor = unsafe.Pointer(C.CString(style.SubKeyPreviewTextColor()))
 		cached.SubKeyFontFamily = unsafe.Pointer(C.CString(style.FontFamily()))
 	})
-
-	shouldAnimate := o.Config().Animation.Enabled && o.hasLast && depth != o.lastDepth &&
-		!o.lastBounds.Empty()
-
-	// Points and pixels are one unit here, so the scale is 1. The animation's
-	// frames never return to Go, so what a transition holds is settled now.
-	fitted := style.FitDraw(1, cellRects, nextDims)
-	held := fitted
-
-	if shouldAnimate {
-		held = style.FitTransition(1, o.transitionOrigins(dims), cellRects, nextDims)
-	}
 
 	finalStyle := C.GridCellStyle{
 		fontSize:                    C.int(fitted.LabelSize),
