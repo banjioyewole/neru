@@ -16,6 +16,7 @@ import (
 	"image"
 	"strings"
 	"sync"
+	"unicode/utf16"
 	"unsafe"
 
 	"go.uber.org/zap"
@@ -349,17 +350,29 @@ func (o *Overlay) DrawRecursiveGrid(
 		wordSize = int(min(fitted.LabelSize, held.LabelSize))
 	}
 
+	highlighted := []rune(style.HighlightedKey())
+
 	for idx, cellRect := range cellRects {
 		label := style.LabelChar()
 		if label == "" && idx < len(keyRunes) {
 			label = CellLabel(keyRunes[idx], cellRect, wordSize)
 		}
+		// The native side's "matched" cell is the grid's typed-prefix match;
+		// this grid has no prefix, so it is borrowed for the highlight, drawn
+		// in the matched colors set below.
+		// Its whole label takes the matched text color, which is how the
+		// native side recolors a label: by the length of its matched prefix.
+		isHighlighted := len(highlighted) == 1 && idx < len(keyRunes) && keyRunes[idx] == highlighted[0]
+		matchedLength := 0
+		if isHighlighted {
+			matchedLength = len(utf16.Encode([]rune(label)))
+		}
 		cells[idx] = C.GridCell{
 			label:               o.getOrCacheLabel(label),
 			bounds:              o.rectToCRect(cellRect),
-			isMatched:           C.int(0),
+			isMatched:           C.int(boolToInt(isHighlighted)),
 			isSubgrid:           C.int(0),
-			matchedPrefixLength: C.int(0),
+			matchedPrefixLength: C.int(matchedLength),
 		}
 	}
 
@@ -375,8 +388,8 @@ func (o *Overlay) DrawRecursiveGrid(
 		cached.BgColor = unsafe.Pointer(C.CString(style.HighlightColor()))
 		cached.LabelBgColor = unsafe.Pointer(C.CString(style.LabelBackgroundColor()))
 		cached.TextColor = unsafe.Pointer(C.CString(style.TextColor()))
-		cached.MatchedTextColor = unsafe.Pointer(C.CString(style.TextColor()))
-		cached.MatchedBgColor = unsafe.Pointer(C.CString(style.HighlightColor()))
+		cached.MatchedTextColor = unsafe.Pointer(C.CString(style.HighlightedCellTextColor()))
+		cached.MatchedBgColor = unsafe.Pointer(C.CString(style.HighlightedCellColor()))
 		cached.MatchedBorderColor = unsafe.Pointer(C.CString(style.LineColor()))
 		cached.BorderColor = unsafe.Pointer(C.CString(style.LineColor()))
 		cached.SubKeyTextColor = unsafe.Pointer(C.CString(style.SubKeyPreviewTextColor()))

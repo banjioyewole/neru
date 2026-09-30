@@ -421,6 +421,9 @@ const (
 	NameCycleHint Name = "cycle_hint"
 	// NameSearchHints starts text filtering in hints mode.
 	NameSearchHints Name = "search_hints"
+	// NameHighlightCell draws a recursive-grid cell as the one about to be
+	// picked, without picking it.
+	NameHighlightCell Name = "highlight_cell"
 	// NameSelectHint selects the hint matching a spoken/typed word, resolved
 	// through the hint vocabulary (see internal/domain/hint/vocab).
 	NameSelectHint Name = "select_hint"
@@ -566,6 +569,11 @@ func IsSearchHintsAction(name string) bool {
 	return Name(name) == NameSearchHints
 }
 
+// IsHighlightCellAction reports whether the given action is highlight_cell.
+func IsHighlightCellAction(name string) bool {
+	return Name(name) == NameHighlightCell
+}
+
 // IsSelectHintAction reports whether the given action is select_hint.
 func IsSelectHintAction(name string) bool {
 	return Name(name) == NameSelectHint
@@ -599,6 +607,7 @@ func IsKnownName(name Name) bool {
 		NameScrollUp, NameScrollDown, NameScrollLeft, NameScrollRight,
 		NameGoTop, NameGoBottom, NamePageUp, NamePageDown,
 		NameMoveMonitor, NameFeed, NameSleep, NameCycleHint, NameSearchHints, NameSelectHint,
+		NameHighlightCell,
 		NameHideCursor, NameShowCursor:
 		return true
 	default:
@@ -739,6 +748,7 @@ func (n Name) ToType() (Type, error) {
 		NameCycleHint,
 		NameSearchHints,
 		NameSelectHint,
+		NameHighlightCell,
 		NameHideCursor,
 		NameShowCursor:
 		return 0, derrors.Newf(derrors.CodeInvalidInput, "action name not executable: %s", n)

@@ -1,6 +1,7 @@
 package recursivegrid
 
 import (
+	"fmt"
 	"image"
 	"strings"
 
@@ -35,6 +36,10 @@ type Style struct {
 	subKeyPreviewAutohideMultiplier float64
 	subKeyPreviewTextColor          string
 	subKeyPreviewLabelChar          string
+
+	// highlightedKey is the cell to draw as the one about to be picked, set
+	// per draw by WithHighlightedKey rather than from configuration.
+	highlightedKey string
 
 	// Packed ARGB forms of the colors above, resolved once when the style is
 	// built. The overlay backends read these inside per-cell draw loops, so
@@ -355,4 +360,35 @@ func (s Style) measureLabels(keys string) Style {
 	)
 
 	return s
+}
+
+// highlightedCellAlpha is how strongly the highlighted cell is filled with the
+// line color. Every cell already carries a faint tint of about that color, so
+// the highlight has to be most of the way to solid to be seen at a glance; its
+// label changes color to stay readable on it.
+const highlightedCellAlpha = 0xCC
+
+// WithHighlightedKey returns the style with the cell labelled key drawn as the
+// one about to be picked. An empty key highlights nothing.
+func (s Style) WithHighlightedKey(key string) Style {
+	s.highlightedKey = key
+
+	return s
+}
+
+// HighlightedKey returns the key of the highlighted cell, or empty for none.
+func (s Style) HighlightedKey() string {
+	return s.highlightedKey
+}
+
+// HighlightedCellColor is the highlighted cell's fill: the line color, at
+// highlightedCellAlpha, in the #AARRGGBB form the backends take.
+func (s Style) HighlightedCellColor() string {
+	return fmt.Sprintf("#%02X%06X", highlightedCellAlpha, s.lineColorARGB&0xFFFFFF)
+}
+
+// HighlightedCellTextColor is the highlighted cell's label color: the label
+// background's, which the theme already picks to read against the line color.
+func (s Style) HighlightedCellTextColor() string {
+	return s.labelBackgroundColor
 }

@@ -2,6 +2,8 @@ package modes
 
 import (
 	"context"
+	"strings"
+	"unicode/utf8"
 
 	"go.uber.org/zap"
 
@@ -197,6 +199,35 @@ func (h *Handler) CycleHint(ctx context.Context, backward bool, executeAction bo
 			}
 		})
 	}
+
+	return nil
+}
+
+// HighlightRecursiveGridCell draws the recursive grid's cell labelled key as
+// the one about to be picked, without picking it; an empty key clears it. It
+// is for a caller steering toward a cell some other way than typing — a remote
+// whose finger's position chooses the cell, a moment before it is chosen.
+//
+// The highlight is a key, not a place, so it stays on the cell with that key
+// as the grid narrows: a caller still steering the same way need not resend it.
+func (h *Handler) HighlightRecursiveGridCell(key string) error {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+
+	if h.appState.CurrentMode() != domain.ModeRecursiveGrid {
+		return derrors.New(derrors.CodeInvalidInput, "highlight_cell requires recursive_grid mode")
+	}
+
+	if h.recursiveGrid == nil || h.recursiveGrid.Manager == nil || h.recursiveGrid.Context == nil {
+		return derrors.New(derrors.CodeActionFailed, "recursive-grid component not available")
+	}
+
+	if key != "" && (utf8.RuneCountInString(key) != 1 || !strings.Contains(h.recursiveGrid.Manager.Keys(), key)) {
+		return derrors.New(derrors.CodeInvalidInput, "no cell at this depth has that key")
+	}
+
+	h.recursiveGrid.Context.SetHighlightedKey(key)
+	h.updateRecursiveGridOverlay()
 
 	return nil
 }

@@ -350,9 +350,19 @@ func (h *handlerState) recursiveGridFrame() ports.RecursiveGridFrame {
 			Keys:       manager.Keys(),
 			Dimensions: domain.GridDimensions{Rows: manager.GridRows(), Cols: manager.GridCols()},
 		},
-		NextLayout: next,
-		Pointer:    h.recursiveGridPointer(),
+		NextLayout:  next,
+		Pointer:     h.recursiveGridPointer(),
+		Highlighted: h.recursiveGridHighlight(),
 	}
+}
+
+// recursiveGridHighlight is the key of the highlighted cell, if any.
+func (h *handlerState) recursiveGridHighlight() string {
+	if h.recursiveGrid == nil || h.recursiveGrid.Context == nil {
+		return ""
+	}
+
+	return h.recursiveGrid.Context.HighlightedKey()
 }
 
 // cleanupRecursiveGridMode handles cleanup for recursive-grid mode.

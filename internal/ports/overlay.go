@@ -100,6 +100,12 @@ type RecursiveGridFrame struct {
 	// Pointer is the stand-in for the cursor, drawn on this surface in the
 	// same pass as the cells.
 	Pointer GridPointer
+
+	// Highlighted is the key of the cell drawn as the one about to be picked,
+	// or empty for none. It says nothing about the selection: the region is
+	// narrowed only by a key, and the highlight is for a caller steering
+	// toward one without typing it.
+	Highlighted string
 }
 
 // RecursiveGridLayout is one depth of a recursive grid: the labels dividing a

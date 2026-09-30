@@ -262,6 +262,47 @@ func (h *ActionsHandler) handleCycleHintAction(
 	}
 }
 
+// handleHighlightCellAction draws the recursive-grid cell with the given key as
+// the one about to be picked. No key clears the highlight.
+func (h *ActionsHandler) handleHighlightCellAction(args []string) ipc.Response {
+	if len(args) > 1 {
+		return ipc.Response{
+			Success: false,
+			Message: "highlight_cell takes one key (e.g., action highlight_cell r), or none to clear",
+			Code:    ipc.CodeInvalidInput,
+		}
+	}
+
+	if h.modesHandler == nil {
+		return ipc.Response{
+			Success: false,
+			Message: msgModesHandlerNotAvailable,
+			Code:    ipc.CodeActionFailed,
+		}
+	}
+
+	key := ""
+	if len(args) == 1 {
+		key = args[0]
+	}
+
+	err := h.modesHandler.HighlightRecursiveGridCell(key)
+	if err != nil {
+		code := ipc.CodeActionFailed
+		if derrors.IsCode(err, derrors.CodeInvalidInput) {
+			code = ipc.CodeInvalidInput
+		}
+
+		return ipc.Response{Success: false, Message: err.Error(), Code: code}
+	}
+
+	return ipc.Response{
+		Success: true,
+		Message: "highlight_cell performed",
+		Code:    ipc.CodeOK,
+	}
+}
+
 // handleSelectHintAction resolves a spoken/typed transcript to a hint label
 // and selects it. args is joined back into a single transcript so multi-word
 // phrases (e.g. "uh, sierra.") survive IPC argument splitting.

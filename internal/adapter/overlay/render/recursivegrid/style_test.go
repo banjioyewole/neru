@@ -218,3 +218,17 @@ func TestStyle_ARGBAccessorsMatchTheHexValues(t *testing.T) {
 		}
 	}
 }
+
+func TestStyle_HighlightedCellColorIsTheLineColorSeeThrough(t *testing.T) {
+	t.Parallel()
+
+	style := NewStyle(StyleOptions{LineColor: "#FF123456"}).WithHighlightedKey("g")
+
+	if got := style.HighlightedKey(); got != "g" {
+		t.Errorf("HighlightedKey() = %q, want g", got)
+	}
+
+	if got := style.HighlightedCellColor(); got != "#CC123456" {
+		t.Errorf("HighlightedCellColor() = %q, want #CC123456", got)
+	}
+}

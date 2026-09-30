@@ -778,7 +778,9 @@ func (a *Adapter) drawRecursiveGrid(frame ports.RecursiveGridFrame, kind drawKin
 		frame.Layout.Dimensions,
 		frame.NextLayout.Keys,
 		frame.NextLayout.Dimensions,
-		style.RecursiveGrid,
+		// The highlight rides on the style rather than as an argument of its
+		// own, so the backends that do not draw it need not change.
+		style.RecursiveGrid.WithHighlightedKey(frame.Highlighted),
 		gridSurfacePointer(frame.Pointer, style.VirtualPointer),
 	)
 	if drawErr != nil {

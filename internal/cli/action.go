@@ -27,7 +27,7 @@ Available subcommands:
                     go_top, go_bottom, page_up, page_down
   Mouse movement:   move_mouse, move_mouse_relative, move_monitor
   Mode control:     reset, backspace, move_cell, bisect, wait_for_mode_exit, cycle_hint,
-                    select_hint
+                    select_hint, highlight_cell
   Cursor saving:    save_cursor_pos, restore_cursor_pos
   Cursor visibility: hide_cursor, show_cursor
   Key injection:    feed
@@ -469,6 +469,9 @@ var ActionCycleHintCmd = BuildCycleHintCommand()
 // ActionSelectHintCmd selects the hint matching a spoken/typed word.
 var ActionSelectHintCmd = BuildSelectHintCommand()
 
+// ActionHighlightCellCmd marks a recursive-grid cell as about to be picked.
+var ActionHighlightCellCmd = BuildHighlightCellCommand()
+
 // ActionMoveCellCmd moves the active mode's selection to a neighboring cell.
 var ActionMoveCellCmd = BuildMoveCellCommand()
 
@@ -505,6 +508,7 @@ func init() {
 	ActionCmd.AddCommand(ActionPageDownCmd)
 	ActionCmd.AddCommand(ActionCycleHintCmd)
 	ActionCmd.AddCommand(ActionSelectHintCmd)
+	ActionCmd.AddCommand(ActionHighlightCellCmd)
 	ActionCmd.AddCommand(ActionMoveCellCmd)
 	ActionCmd.AddCommand(ActionBisectCmd)
 	ActionCmd.AddCommand(ActionHideCursorCmd)

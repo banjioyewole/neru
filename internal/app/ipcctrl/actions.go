@@ -130,6 +130,11 @@ func (h *ActionsHandler) handleAction(ctx context.Context, cmd ipc.Command) ipc.
 		return h.handleSelectHintAction(ctx, cmd.Args[1:])
 	}
 
+	// highlight_cell takes its key positionally, and none at all to clear.
+	if action.IsHighlightCellAction(actionName) {
+		return h.handleHighlightCellAction(cmd.Args[1:])
+	}
+
 	parsed, parseFailed := parseActionArgs(cmd.Args[1:])
 	if parseFailed {
 		return refuseAction("invalid or missing flag value")

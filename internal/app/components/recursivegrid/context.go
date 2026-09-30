@@ -116,9 +116,25 @@ func (c *baseContext) CaptureScope() string {
 // Context holds the state and context for recursive_grid mode operations.
 type Context struct {
 	baseContext
+
+	// highlightedKey is the cell drawn as the one a caller is about to pick,
+	// or empty for none. See Handler.HighlightRecursiveGridCell.
+	highlightedKey string
+}
+
+// SetHighlightedKey marks the cell with this key as the one about to be
+// picked. An empty key clears it.
+func (c *Context) SetHighlightedKey(key string) {
+	c.highlightedKey = key
+}
+
+// HighlightedKey returns the key of the highlighted cell, or empty for none.
+func (c *Context) HighlightedKey() string {
+	return c.highlightedKey
 }
 
 // Reset resets the recursive_grid context to its initial state.
 func (c *Context) Reset() {
 	c.baseContext.Reset()
+	c.highlightedKey = ""
 }
